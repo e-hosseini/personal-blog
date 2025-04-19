@@ -1,69 +1,39 @@
 ---
-title: "Reducing Reflows and Repaints — Taming the Browser’s Most Expensive Work"
-slug: "reducing-reflows-repaints"
+title: "Mastering the Browser Performance: Reducing Reflows and Repaints"
+slug: "mastering-browser-performance-reflows-repaints"
 category: "Performance"
 tags: ["performance", "reflow", "repaint", "layout shift", "dom", "rendering"]
-summary: "Reflows and repaints are among the most costly rendering operations. Learn how to avoid layout thrashing, reduce visual jank, and make your frontend run smoother than ever."
+summary: "Reflows and repaints are among the most performance-hindering operations in a browser. This article dives into the intricate details of these two phenomena, demonstrates how to detect and reduce them, and presents real-world case studies that have successfully mitigated their impact. "
 publishedAt: "2022-11-18"
 ---
 
-# Reducing Reflows and Repaints — Taming the Browser’s Most Expensive Work
+# Mastering the Browser Performance: Reducing Reflows and Repaints
 
-You’ve minimized your bundle. You’ve optimized your API. But your UI still lags, stutters, or feels “heavy”.
+Even after optimizing your bundle and API, your application's user interface (UI) may still exhibit lag, stutter, or a heavy feel. This sluggish behavior might not be due to JavaScript but rather the **browser itself** overworking — recalculating layout and repainting excessively. 
 
-It might not be JavaScript. It might be the **browser itself** — recalculating layout, restyling, and repainting too often.
+These operations are known as **reflows** and **repaints**, and they’re some of the most computationally expensive tasks a browser performs. This article elucidates what reflows and repaints are, the conditions that trigger them, how to detect and reduce them, what causes layout thrashing, and best practices gleaned from real-world solutions.
 
-These are called **reflows** and **repaints**, and they’re some of the most expensive rendering operations in a browser.
+## Reflows: The Backdrop
 
-In this article, you’ll learn:
-- What reflows and repaints are
-- How and when they happen
-- How to detect and reduce them
-- What triggers layout thrashing
-- Real-world fixes and best practices
+A **reflow**, also known as a layout, occurs when the browser recalculates the **geometry of the webpage**. This encompasses the positions of elements, their widths and heights, box models, and stacking order. Modifications to the Document Object Model (DOM) size or position frequently instigate reflows.
 
----
+## Demystifying Repaints
 
-## What Is a Reflow?
+On the other hand, a **repaint** occurs when parts of the screen are redrawn following a style change. These alterations can include color changes, shadows, and visibility. Although repainting is less costly than a reflow, it still demands significant resources, especially when dealing with large surfaces.
 
-A **reflow** (aka layout) happens when the browser recalculates the **geometry of the page**:
-- Element positions
-- Widths, heights
-- Box models and stacking
+## Triggers for Reflows
 
-Changes to DOM size or position often trigger reflows.
+Several actions can trigger a reflow. These include:
+- The addition or removal of DOM nodes
+- Changes to styles that affect layout (e.g., `display`, `height`, `margin`)
+- Calls to measurement APIs such as `offsetHeight` and `getBoundingClientRect`
+- Animation of properties that necessitate layout recalculations
 
----
+## Detecting Reflows and Repaints
 
-## What Is a Repaint?
+To identify reflows and repaints, use Chrome DevTools' Performance tab to record interactions. Look for events like "Recalculate Style", "Layout", "Paint", and "Composite Layers". The Paint Flashing tool in the Rendering panel visualizes repaints. 
 
-A **repaint** redraws parts of the screen after a style change:
-- Color
-- Shadow
-- Visibility
-
-Repaint is cheaper than reflow, but still expensive — especially on large surfaces.
-
----
-
-## What Triggers Reflows?
-
-- Adding/removing DOM nodes
-- Changing layout-affecting styles (e.g. `display`, `height`, `margin`)
-- Calling measurement APIs: `offsetHeight`, `getBoundingClientRect`
-- Animating properties that require layout
-
----
-
-## How to Detect Them
-
-### Chrome DevTools
-
-- Open Performance tab → record interaction
-- Look for “Recalculate Style”, “Layout”, “Paint”, “Composite Layers”
-- Use Paint Flashing (Rendering panel) to see repaints visually
-
-### Use `console.time()` to measure critical paths
+Furthermore, you can use `console.time()` to measure the execution time of critical paths. For instance:
 
 ```js
 console.time("layout");
@@ -71,15 +41,13 @@ element.offsetHeight;
 console.timeEnd("layout");
 ```
 
----
+The above code times how long it takes to calculate `element.offsetHeight`.
 
-## Techniques to Avoid Thrashing
+## Techniques to Mitigate Layout Thrashing
 
 ### Read, then Write
 
-Avoid interleaving:
-
-❌ Bad:
+Interleaving reading and writing operations can cause layout thrashing. Consider the following example:
 
 ```js
 el.style.width = "100px";
@@ -87,7 +55,9 @@ const h = el.offsetHeight;
 el.style.border = "1px solid red";
 ```
 
-✅ Good:
+In the above code, a write operation (`el.style.width = "100px"`), followed by a read operation (`const h = el.offsetHeight`), and then another write operation (`el.style.border = "1px solid red"`) results in reflows.
+
+A better approach is to bundle all read operations before write operations, as shown below:
 
 ```js
 const h = el.offsetHeight;
@@ -95,27 +65,19 @@ el.style.width = "100px";
 el.style.border = "1px solid red";
 ```
 
----
+### Avoiding Layout-Affecting Animations
 
-### Avoid Layout-Affecting Animations
-
-❌ Avoid:
-
-```css
-transition: height 0.3s;
-```
-
-✅ Prefer:
+Animations that affect layout should be avoided. For instance, instead of animating properties like `height`, animate properties like `transform`:
 
 ```css
 transition: transform 0.3s;
 ```
 
-Use `transform` and `opacity` — they're GPU-accelerated and don't require layout.
+Properties such as `transform` and `opacity` are GPU-accelerated and don't necessitate layout recalculations.
 
----
+## Utilizing CSS Containment
 
-## Use CSS Containment
+CSS Containment can help improve performance in dynamic UIs. It instructs the browser not to reflow beyond the defined boundary:
 
 ```css
 .card {
@@ -123,56 +85,20 @@ Use `transform` and `opacity` — they're GPU-accelerated and don't require layo
 }
 ```
 
-Tells browser not to reflow beyond this boundary.
+## Leveraging Virtualization
 
-Improves performance in dynamic UIs.
+For large lists, virtualization techniques can be beneficial. They prevent the DOM from growing unbounded, which would otherwise increase the reflow cost for each frame. Libraries like `react-window` and `react-virtual`, or using intersection observers, can aid in implementing virtualization.
 
----
+## Anti-Patterns to Avoid
 
-## Virtualization Helps
-
-Large lists? Virtualize them.
-
-Avoid letting the DOM grow unbounded — it increases reflow cost for every frame.
-
-Use `react-window`, `react-virtual`, or intersection observers.
-
----
-
-## Real-World Fixes
-
-### GitHub
-
-- Lazy-loads diff view rows to avoid large layouts
-- Replaces collapsing regions with `height: auto` + transition hack
-
-### Airbnb
-
-- Moved from height-based animations to transforms on calendar/date pickers
-- Reduced mobile layout shift dramatically
-
-### Shopify
-
-- Uses React concurrent features to schedule layout-heavy updates
-
----
-
-## Anti-Patterns
-
+Several practices can exacerbate reflows and repaints. These include:
 - Animating `width`, `height`, `top`, `left`
-- Reading layout mid-animation
-- DOM manipulations inside requestAnimationFrame with layout reads
+- Reading layout in the middle of an animation
+- Manipulating the DOM inside `requestAnimationFrame` with layout reads
 - Synchronous style reads in scroll/resize handlers
-
----
 
 ## Conclusion: Don’t Let Layout Be Your Bottleneck
 
-Reflows and repaints are expensive — not just in CPU cycles, but in **perceived fluidity**.
+Reflows and repaints are expensive — not just in CPU cycles, but in **perceived fluidity**. Users perceive them as jank, lag, or dropped frames. Therefore, to ensure a smooth and responsive UI, it is crucial to keep layout operations **predictable** and **contained**.
 
-Users feel them as jank. As lag. As dropped frames.
-
-So keep your UI flowing by keeping layout **predictable** and **contained**.
-
-You can’t avoid reflows entirely — but you can sure stop them from ruining your rhythm.
-
+While it is impossible to avoid reflows entirely, with careful planning and good practices, you can certainly prevent them from disrupting your application's performance.

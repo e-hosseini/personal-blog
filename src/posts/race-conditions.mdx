@@ -1,55 +1,56 @@
 ---
-title: "Out-of-Order Responses & Race Conditions — Winning the Right Request"
+title: "Managing Out-of-Order Responses & Race Conditions — Prioritizing the Right Request"
 slug: "race-conditions"
 category: "Networking Techniques"
-tags: ["race conditions", "async", "networking", "react", "order guarantees"]
-summary: "Explore the problem of out-of-order network responses and how to prevent race conditions in modern apps. Learn patterns for ensuring only the latest request wins using refs, counters, and abort strategies."
+tags: ["race conditions", "asynchronous", "networking", "react", "order guarantees"]
+summary: "This article delves into the conundrum of out-of-order network responses and the prevention of race conditions in contemporary applications. It outlines patterns for ensuring the most recent request takes precedence using refs, counters, and abort strategies."
 publishedAt: "2022-10-21"
 ---
 
-# Out-of-Order Responses & Race Conditions — Winning the Right Request
+# Managing Out-of-Order Responses & Race Conditions — Prioritizing the Right Request
 
-Modern UIs are full of **concurrent network calls** — and that creates opportunities for one of the trickiest bugs: **race conditions**.
+Contemporary User Interfaces (UIs) are characterized by a multitude of concurrent network calls, providing fertile ground for one of the most elusive bugs: race conditions. 
 
-A race condition happens when multiple async operations **compete**, and the one that finishes first wins — even if it **shouldn’t**.
+A race condition manifests when various asynchronous operations compete with each other, and the operation completing first takes precedence, even if it logically shouldn't. 
 
-For example:
-- A user types “dog” → fetch for “dog” starts
-- Then types “do” → fetch for “do” starts later, but returns first
-- UI now shows results for “do”, even though “dog” is the latest input
+Consider the following scenario: 
+- A user enters “dog” → a fetch for “dog” begins
+- The user then modifies the input to “do” → a fetch for “do” commences later, yet returns first
+- The UI displays the results for “do”, even though “dog” is the most recent input
 
-This is a race condition caused by **out-of-order responses**.
+This example illustrates a race condition induced by out-of-order responses.
 
-In this article, we’ll dive into:
-- Why race conditions happen
-- How to detect and reproduce them
+In this comprehensive guide, we will dissect the following aspects: 
+- The genesis of race conditions
+- Detection and reproduction techniques
 - Patterns to cancel, compare, or ignore stale responses
 - Implementations in React using refs, tokens, and counters
-- Real-world strategies from search inputs, autocompletes, and filters
+- Real-world strategies employed in search inputs, autocompletes, and filters
 
 ---
 
-## Why Race Conditions Matter
+## The Significance of Race Conditions
 
-They’re subtle. They break trust.
+Race conditions are insidious, gradually eroding user trust. A user may type a query and see an incorrect result, click to sort, only to have the old response supersede the new one, or open a modal, and stale data populates it. 
 
-A user types something — sees the wrong result. Or clicks to sort — and the old response overwrites the new one. Or opens a modal — and stale data loads in.
-
-Most users won’t file a bug. They’ll just think your app is broken.
+Most users won't file a bug report; they'll just presume your application is defective.
 
 ---
 
-## Where Race Conditions Happen
+## The Breeding Grounds for Race Conditions
 
-- **Search inputs** (type fast, many requests fire)
-- **Dropdown filters** (select, reselect quickly)
-- **Tabs or modals** (navigate quickly)
-- **Rapid navigation** (client-side router with prefetch)
-- **Parallel data fetching** (combined effects or compound queries)
+Race conditions commonly occur in the following scenarios: 
+- **Search inputs**: Fast typing triggers numerous requests.
+- **Dropdown filters**: Rapid selection and reselection.
+- **Tabs or modals**: Quick navigation.
+- **Rapid navigation**: A client-side router with prefetch.
+- **Parallel data fetching**: Combined effects or compound queries.
 
 ---
 
 ## Example of the Problem
+
+Consider the following code snippet:
 
 ```tsx
 useEffect(() => {
@@ -59,13 +60,15 @@ useEffect(() => {
 }, [query]);
 ```
 
-This fires a fetch on each query change — but doesn’t cancel the previous one. If older fetches resolve last, they overwrite new ones.
+This code executes a fetch for each query modification — but doesn't cancel the previous one. If older fetches resolve last, they supersede new ones, leading to an erroneous display of results.
 
 ---
 
-## Solutions
+## Mitigation Strategies
 
 ### 1. AbortController (with fetch)
+
+The `AbortController` class allows you to abort one or more Web requests as and when desired. 
 
 ```tsx
 useEffect(() => {
@@ -82,13 +85,13 @@ useEffect(() => {
 }, [query]);
 ```
 
-This **cancels stale requests** before firing the new one.
+This code snippet ensures the cancellation of stale requests before initiating a new one.
 
 ---
 
 ### 2. Request ID Tracking
 
-Use a ref to track the current request:
+By using a ref, you can keep track of the current request:
 
 ```tsx
 const requestIdRef = useRef(0);
@@ -104,13 +107,13 @@ useEffect(() => {
 }, [query]);
 ```
 
-Only the latest request can update state.
+This approach ensures that only the most recent request can modify the state.
 
 ---
 
 ### 3. Sequence Token Pattern
 
-Create a `makeCancelable` wrapper around each request:
+Creating a `makeCancelable` wrapper around each request can also prove effective:
 
 ```ts
 function makeCancelable(promise) {
@@ -125,7 +128,7 @@ function makeCancelable(promise) {
 }
 ```
 
-Use this to race and cancel old ones when needed.
+This method allows you to race and cancel older requests when necessary.
 
 ---
 
@@ -133,8 +136,7 @@ Use this to race and cancel old ones when needed.
 
 ### React Query
 
-- Automatically **cancels** in-flight queries on refetch
-- Deduplicates stale results
+React Query automatically cancels in-flight queries on refetch and deduplicates stale results.
 
 ```tsx
 useQuery(["search", query], fetchSearch, { keepPreviousData: true });
@@ -142,53 +144,48 @@ useQuery(["search", query], fetchSearch, { keepPreviousData: true });
 
 ### SWR
 
-- Ensures **latest response wins** using timestamps and cache keys
-- `mutate()` respects freshness
+SWR ensures that the latest response prevails by using timestamps and cache keys. Its `mutate()` method respects freshness.
 
 ---
 
-## Real-World Examples
+## Real-World Implementations
 
 ### GitHub Autocomplete
 
-Typing in the issue search bar:
-- Debounces input
-- Cancels prior fetches
-- Uses a race-safe cache layer
+While typing in the issue search bar on GitHub, the input is debounced, prior fetches are cancelled, and a race-safe cache layer is used.
 
 ### VSCode Extensions Marketplace
 
-- Filtering by publisher or keyword cancels old results
-- Avoids UI flashing from stale entries
+When filtering by publisher or keyword, old results are cancelled to avoid UI flashing from stale entries.
 
 ### Notion Link Picker
 
-- As you type to find a page, only the latest result is shown
-- No jumping or flickering due to out-of-order results
+As you type to find a page in Notion, only the latest result is displayed, eliminating any jumping or flickering due to out-of-order results.
 
 ---
 
 ## Anti-Patterns
 
-- Triggering fetch without cancel/ref guard
-- Ignoring stale responses
-- Updating state after component unmount (memory leak!)
+Here are some practices to avoid when dealing with race conditions:
+- Triggering fetch without a cancellation or ref guard
+- Neglecting stale responses
+- Updating state after a component unmount, leading to a potential memory leak
 - Using async/await in `useEffect` without cleanup
-- Reacting to multiple input changes without debounce
+- Responding to multiple input changes without debounce
 
 ---
 
 ## Conclusion: Control the Timeline
 
-Race conditions aren’t about speed — they’re about **who should win**.
+Race conditions are not about speed — they're about priority.
 
-You’re not just fetching data. You’re coordinating a timeline:
-- When did it start?
-- When did it end?
-- What else happened in between?
+When managing network requests, you are essentially coordinating a timeline:
+- When does a request start?
+- When does it end?
+- What else transpires in between?
 
 The answer isn’t “first come, first served.”
 
-It’s “latest wins.”
+The correct approach is “latest wins.”
 
-And your UI should reflect that truth.
+Your UI should reflect this policy, ensuring an accurate and intuitive user experience.

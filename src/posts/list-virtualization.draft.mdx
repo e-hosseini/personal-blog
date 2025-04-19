@@ -1,0 +1,176 @@
+---
+title: "List Virtualization — Rendering Millions of Rows Without Breaking the Browser"
+slug: "list-virtualization"
+category: "Performance"
+tags: ["performance", "virtualization", "infinite scroll", "react-window", "ui optimization"]
+summary: "Master the art of virtual scrolling with list virtualization. Learn how to render large datasets in React or any UI without hurting performance, memory, or user experience."
+publishedAt: "2022-08-05"
+---
+
+# List Virtualization — Rendering Millions of Rows Without Breaking the Browser
+
+Your UI renders a list of 10,000 items. The user scrolls. The page lags. Frames drop. CPU spikes.
+
+Sound familiar?
+
+Rendering large lists is one of the most common — and most painful — frontend performance problems. But there's a solution: **list virtualization**.
+
+List virtualization (or virtual scrolling) is a technique where only the **visible items** in a list are rendered. Everything outside the viewport is **ignored until needed**. This dramatically reduces DOM nodes, memory usage, and render time.
+
+In this article, we’ll cover:
+- What virtualization is and why it works
+- How to implement it in React with `react-window` and `react-virtual`
+- Dynamic heights, sticky headers, and infinite scroll
+- Real-world examples from Slack, Discord, and Facebook
+- Anti-patterns and debugging tips
+
+---
+
+## The Problem: The DOM Is Expensive
+
+Each item you render:
+- Creates a DOM node
+- May trigger style/layout/repaint
+- Consumes memory
+
+Rendering 100+ elements = fine. 1,000+ = maybe. 10,000+? Your browser chokes.
+
+Even worse with:
+- Images
+- Rich text
+- Heavy nested markup
+
+The solution? Render only what the user can **see**.
+
+---
+
+## What Is Virtualization?
+
+Instead of rendering the entire list, you render a **window** of it — typically just the visible items + a buffer.
+
+```tsx
+<List height={600} itemCount={10000} itemSize={35} width={800}>
+  {({ index, style }) => (
+    <div style={style}>Item {index}</div>
+  )}
+</List>
+```
+
+Under the hood:
+- The wrapper container is scrollable
+- Visible rows are positioned with absolute or transform CSS
+- Only a small subset exists in the DOM
+
+Popular libraries:
+- `react-window` (Brian Vaughn)
+- `react-virtual` (Tanner Linsley)
+- `react-virtualized` (legacy, but still used)
+
+---
+
+## Benefits
+
+- Render performance improves by 10–100x
+- Less GC churn, faster FPS
+- Scroll smoothness on mobile and low-end devices
+- Great for chat logs, tables, infinite feeds
+
+---
+
+## Real-World Examples
+
+### Slack
+
+- Virtualizes message history
+- Avoids re-rendering old messages unless scrolled into view
+
+### Discord
+
+- Uses virtualization for chat, member list, and emojis
+- Manages animation + virtualization seamlessly
+
+### Facebook
+
+- Feed virtualization keeps timeline fast even with media-rich posts
+- Reuses DOM nodes where possible
+
+---
+
+## Dynamic Height Rows
+
+Trickier — because you don’t know size in advance.
+
+Options:
+- Use `VariableSizeList` from `react-window`
+- Estimate + measure with ResizeObserver
+- Memoize measured heights and recalculate layout
+
+```tsx
+<VariableSizeList itemSize={getItemSize} />
+```
+
+---
+
+## Infinite Scroll + Virtualization
+
+Virtualization ≠ infinite scroll. But they pair well:
+
+```tsx
+const isItemLoaded = index => !!data[index];
+const loadMoreItems = (startIndex, stopIndex) => {
+  return fetchData(startIndex, stopIndex);
+};
+
+<InfiniteLoader
+  isItemLoaded={isItemLoaded}
+  loadMoreItems={loadMoreItems}
+  itemCount={10000}
+>
+  {({ onItemsRendered, ref }) => (
+    <FixedSizeList
+      ref={ref}
+      onItemsRendered={onItemsRendered}
+      height={600}
+      itemCount={10000}
+      itemSize={35}
+      width={800}
+    >
+      {Row}
+    </FixedSizeList>
+  )}
+</InfiniteLoader>
+```
+
+---
+
+## Sticky Headers & Grouping
+
+Sticky rows require additional tracking:
+
+- Use portals to extract DOM nodes
+- Render sticky headers separately and sync scroll
+- Maintain mapping of row positions for scroll offset
+
+---
+
+## Anti-Patterns
+
+- Rendering all rows in `map()` for big lists
+- Using `display: none` or `visibility: hidden` instead of removing
+- Animating non-visible rows
+- Forcing layout with dynamic `height: auto` in virtual rows
+
+---
+
+## Conclusion: Scale Your UI Without Sacrificing UX
+
+List virtualization makes the impossible possible — rendering huge data sets **without hurting the user**.
+
+If you’ve got 1,000+ rows, it’s not just a nice-to-have. It’s **necessary**.
+
+So stop rendering what the user can’t see.
+
+And let your interface breathe.
+
+Because less DOM = more performance.
+

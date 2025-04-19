@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, graphql } from 'gatsby';
 import Layout from '../components/layout';
+import Topic from '../components/Topic';
 
-interface TagTemplateProps {
+interface TopicTemplateProps {
   data: {
     allMdx: {
       nodes: Array<{
@@ -28,7 +29,7 @@ interface TagTemplateProps {
   };
 }
 
-const TagTemplate: React.FC<TagTemplateProps> = ({ data, pageContext }) => {
+const TopicTemplate: React.FC<TopicTemplateProps> = ({ data, pageContext }) => {
   const { originalTag, currentPage, numPages } = pageContext;
   const posts = data.allMdx.nodes;
 
@@ -46,9 +47,9 @@ const TagTemplate: React.FC<TagTemplateProps> = ({ data, pageContext }) => {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="mb-8">
             <Link to="/tags" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-              ← Back to all tags
+              ← Back to all topics
             </Link>
-            <h1 className="text-4xl font-bold">No posts found for tag "{originalTag}"</h1>
+            <h1 className="text-4xl font-bold">No posts found for topic "{originalTag}"</h1>
           </div>
         </div>
       </Layout>
@@ -57,39 +58,35 @@ const TagTemplate: React.FC<TagTemplateProps> = ({ data, pageContext }) => {
 
   return (
     <Layout
-      title={`Posts tagged with "${originalTag}"${currentPage > 1 ? ` - Page ${currentPage}` : ''}`}
-      description={`Browse all posts tagged with ${originalTag}`}
+      title={`Posts about "${originalTag}"${currentPage > 1 ? ` - Page ${currentPage}` : ''}`}
+      description={`Browse all posts about ${originalTag}`}
     >
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8">
           <Link to="/tags" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to all tags
+            ← Back to all topics
           </Link>
-          <h1 className="text-4xl font-bold">Posts tagged with "{originalTag}"</h1>
+          <h1 className="text-3xl font-montserrat font-medium mb-4">Posts about "{originalTag}"</h1>
         </div>
         
-        <div className="space-y-8">
+        <div className="space-y-6">
           {posts.map((post) => (
-            <article key={post.id} className="bg-white p-6 rounded-lg shadow-sm">
-              <Link to={`/${post.fields.slug}`} className="block">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{post.frontmatter.title}</h2>
-                <div className="flex items-center text-gray-600 mb-4">
+            <article key={post.id} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <Link to={post.fields.slug} className="block">
+                <h2 className="text-xl font-montserrat font-medium text-gray-900 mb-2">{post.frontmatter.title}</h2>
+                <div className="flex items-center text-sm text-gray-600 mb-3">
                   <span className="mr-4">{post.frontmatter.publishedAt}</span>
-                  <span className="px-2 py-1 bg-gray-200 rounded-full text-sm">
+                  <div className="flex flex-wrap gap-2">
                     {post.frontmatter.tags.map((tag) => (
-                      <Link
+                      <Topic
                         key={tag}
-                        to={`/tags/${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                        className={`mr-2 hover:text-blue-600 ${
-                          tag === originalTag ? 'text-blue-600' : ''
-                        }`}
-                      >
-                        {tag}
-                      </Link>
+                        tag={tag}
+                        isActive={tag === originalTag}
+                      />
                     ))}
-                  </span>
+                  </div>
                 </div>
-                <p className="text-gray-700">{post.frontmatter.summary}</p>
+                <p className="text-gray-700 text-sm">{post.frontmatter.summary}</p>
               </Link>
             </article>
           ))}
@@ -138,7 +135,7 @@ const TagTemplate: React.FC<TagTemplateProps> = ({ data, pageContext }) => {
 };
 
 export const query = graphql`
-  query TagPostsQuery($originalTag: String!, $skip: Int!, $limit: Int!) {
+  query TopicPostsQuery($originalTag: String!, $skip: Int!, $limit: Int!) {
     allMdx(
       sort: { frontmatter: { publishedAt: DESC } }
       filter: { frontmatter: { tags: { in: [$originalTag] } } }
@@ -161,4 +158,4 @@ export const query = graphql`
   }
 `;
 
-export default TagTemplate; 
+export default TopicTemplate; 

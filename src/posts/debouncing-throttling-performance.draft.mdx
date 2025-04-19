@@ -1,0 +1,170 @@
+---
+title: "Debouncing & Throttling — Rate-Limiting the Frontend Like a Pro"
+slug: "debouncing-throttling-performance"
+category: "Performance"
+tags: ["performance", "debouncing", "throttling", "event optimization", "input", "scroll"]
+summary: "Master debouncing and throttling as frontend rate-limiting tools. Prevent wasteful renders, tame scroll chaos, and keep your UI fast and responsive by controlling the frequency of event triggers."
+publishedAt: "2022-05-06"
+---
+
+# Debouncing & Throttling — Rate-Limiting the Frontend Like a Pro
+
+Modern UIs are interactive, reactive, and — when left unchecked — overactive.
+
+Scroll events fire every pixel. Inputs fire on every keystroke. Resize events hammer the DOM.
+
+If you handle each one without control, you create **lag, frame drops, and wasted CPU cycles**.
+
+The solution? **Debouncing** and **throttling** — simple, powerful strategies for **rate-limiting the frontend**.
+
+In this guide, you’ll learn:
+- The difference between debouncing and throttling
+- How to use each to prevent render storms
+- React-friendly implementations
+- Real-world patterns (search, resize, scroll)
+- Best practices and pitfalls to avoid
+
+---
+
+## Why Control Frequency?
+
+Every time a user types, scrolls, clicks, or resizes:
+- You may fire an event
+- That may trigger a rerender
+- Which may reflow/repaint
+- Which may lag the UI
+
+Uncontrolled = sluggish UX.
+
+---
+
+## Debouncing: Wait Until They’re Done
+
+**Debounce** delays execution until the user **stops** doing something.
+
+```js
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+```
+
+Use for:
+- Search boxes
+- Input validation
+- Auto-saving drafts
+
+---
+
+## Throttling: Limit Frequency
+
+**Throttle** ensures a function only runs once every N ms.
+
+```js
+function throttle(fn, limit) {
+  let inThrottle;
+  return (...args) => {
+    if (!inThrottle) {
+      fn(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+```
+
+Use for:
+- Scroll handling
+- Resize tracking
+- Analytics firing
+
+---
+
+## React Example — Debounce Input
+
+```tsx
+const [query, setQuery] = useState("");
+const debouncedQuery = useDebounce(query, 300);
+
+useEffect(() => {
+  if (debouncedQuery) {
+    fetch(`/search?q=${debouncedQuery}`);
+  }
+}, [debouncedQuery]);
+```
+
+Avoids fetch-on-every-keystroke chaos.
+
+---
+
+## Scroll Optimization with Throttle
+
+```tsx
+useEffect(() => {
+  const handleScroll = throttle(() => {
+    const scrollY = window.scrollY;
+    // Maybe trigger lazy-load, sticky nav, etc.
+  }, 100);
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+```
+
+Results in buttery smooth UI even on long pages.
+
+---
+
+## Real-World Usage
+
+- **Twitter**: Throttles scroll events to animate header/UI transitions
+- **Gmail**: Debounces search box as-you-type queries
+- **Spotify**: Throttles progress bar + waveform visualization
+- **Stripe Dashboard**: Debounces input-driven reports & filtering
+
+---
+
+## When to Combine Both
+
+Debounce inputs, throttle results:
+
+```tsx
+const query = useDebounce(input, 300);
+const result = useThrottle(query, 1000);
+```
+
+Or debounce scroll trigger, throttle scroll event logic.
+
+---
+
+## Libraries
+
+- `lodash.debounce`, `lodash.throttle`
+- `use-debounce`, `usehooks-ts`
+- `raf-schd` — throttle with `requestAnimationFrame`
+- React Query: built-in throttling for background refetches
+
+---
+
+## Anti-Patterns
+
+- Debouncing scroll (delays visible effect)
+- Throttling input (feels laggy to user)
+- Forgetting to cleanup `setTimeout`
+- Debouncing critical event (auth, errors, syncs)
+
+---
+
+## Conclusion: Fast Apps Are Controlled Apps
+
+You don't need to respond **every time** a user does something.
+
+You just need to respond **at the right time**.
+
+Debounce the noise. Throttle the flood.
+
+And give your app room to breathe — one millisecond at a time.
+

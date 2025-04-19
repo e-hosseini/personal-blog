@@ -1,0 +1,215 @@
+---
+title: "Pagination — Designing Scalable Data Windows"
+slug: "api-pagination"
+category: "Back end APIs"
+tags: ["pagination", "api", "infinite scroll", "offset", "cursor", "graphql", "rest"]
+summary: "A deep, practical dive into API pagination — how to scale your data access layer using offset, cursors, pages, and seek-based queries. Learn tradeoffs, schema design, and how to avoid inconsistency, duplication, and performance bottlenecks."
+publishedAt: "2022-02-11"
+---
+
+# Pagination — Designing Scalable Data Windows
+
+Pagination is more than just slicing a list. It’s a performance technique, a consistency strategy, and a user experience problem all rolled into one. And at scale, pagination is often one of the most **difficult things to get right** — especially when your data is constantly changing.
+
+When you're dealing with massive datasets — think product catalogs, search results, chat logs, activity feeds — sending the entire dataset to the client is not an option. So we paginate. But how we paginate determines everything: performance, consistency, caching, user satisfaction, and even security.
+
+This article takes you deeper than just offset vs cursor. We’ll explore pagination from the ground up — from SQL design to API ergonomics, frontend integration to production reliability.
+
+---
+
+## Why Do We Need Pagination?
+
+Without pagination, even moderately sized data sets become unmanageable.
+
+Consider an e-commerce site with:
+- 500,000 products
+- 1,000 orders per day
+- 100+ concurrent users
+
+Sending 10,000 results at once:
+- Chokes the frontend rendering loop
+- Consumes mobile bandwidth unnecessarily
+- Triggers database timeouts or memory pressure
+- Destroys perceived performance
+
+Pagination enforces **bounded queries** and **incremental rendering**. It creates windows into large data sets, enabling:
+- Search result navigation
+- Admin dashboard browsing
+- Feed rendering
+- Background preloading
+- Incremental filtering
+
+---
+
+## Key Pagination Strategies (with Deep Tradeoffs)
+
+### Offset-based Pagination
+
+```http
+GET /products?offset=60&limit=20
+```
+
+🧠 Simple to understand and implement. Supported by SQL (`LIMIT`, `OFFSET`).
+
+**Downside**: Insertion or deletion of rows **shifts everything**, leading to:
+- Duplicate results across pages
+- Skipped entries
+- Inconsistent list states
+
+💡 Use when: dataset is mostly static (e.g. archived logs, analytics), not real-time.
+
+---
+
+### Page-based Pagination
+
+```http
+GET /products?page=3&pageSize=50
+```
+
+💡 Adds user-friendly semantics. Good for UI pagination controls (1, 2, 3...).
+
+Still subject to the same limitations as offset — but sometimes better UX for users than raw offsets.
+
+📘 Design Tip: Always return `totalPages`, `totalCount`, `currentPage` in response metadata.
+
+---
+
+### Cursor-based Pagination (a.k.a. Relay-style)
+
+```http
+GET /posts?after=abcdef123&limit=25
+```
+
+Here, `after` is a base64-encoded cursor (e.g., post ID or timestamp).
+
+🛠 Requires API to generate and manage stable cursors.
+
+✅ Pros:
+- Very consistent under mutation
+- Great for live feeds, messages, social timelines
+- Encourages stateless client navigation
+
+❌ Cons:
+- Harder to debug
+- Can't jump to arbitrary pages (e.g. "page 30")
+- Can break if cursor encoding/decoding logic is inconsistent
+
+💡 Best when: Data is sorted by time, ID, or relevance and often changes.
+
+---
+
+### Keyset Pagination
+
+```sql
+SELECT * FROM products
+WHERE created_at < '2024-03-01T00:00:00Z'
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+Instead of offsetting by row number, you paginate **by value** — often a sort key like a timestamp or ID.
+
+⚡️ Benefits:
+- Extremely fast
+- No performance degradation on deep pages
+- Resistant to deletion/insertion issues
+
+🧠 Downside: Can’t skip directly to page N. No total count.
+
+📈 Used by: Facebook, Twitter, and high-performance feeds
+
+---
+
+## Schema Design for Pagination
+
+A good paginated API should always include:
+- `items`: the data
+- `meta`: pagination metadata
+
+Example:
+
+```json
+{
+  "items": [...],
+  "meta": {
+    "totalCount": 1349,
+    "page": 2,
+    "pageSize": 50,
+    "nextCursor": "abc123",
+    "hasMore": true
+  }
+}
+```
+
+In GraphQL:
+
+```graphql
+query {
+  products(first: 20, after: "abc123") {
+    edges {
+      node {
+        id
+        title
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+---
+
+## Real-World Pagination Examples
+
+### GitHub
+
+GraphQL API uses cursor-based pagination (`edges`, `pageInfo`) — critical for repositories with 100K+ issues. The cursor structure is opaque, reducing coupling between client/server.
+
+### Twitter
+
+Internally uses keyset pagination with message IDs to paginate tweets, ensuring consistency even as tweets are deleted or new ones added between requests.
+
+### Shopify
+
+Product, collection, and order listings use cursor-based APIs. Admin dashboards show paginated tables, while public storefronts often use infinite scrolling with cached cursors.
+
+---
+
+## Frontend Considerations
+
+- Use frameworks with **first-class support**: SWR, React Query, Relay, TanStack Query
+- Implement **loading states** that don't block entire views
+- Use intersection observers or scroll tracking for **infinite scroll**
+- Track cursors in app state or URL params for resuming position
+- Show **empty** states and **"end of list"** indicators clearly
+
+---
+
+## Pitfalls and Gotchas
+
+- Offset + deletions = skipped or duplicated data
+- Exposing raw DB IDs = security leak
+- Changing sort order between requests = broken pagination
+- Not handling network failures = frozen UI
+- Mixing filters/sorts without resetting pagination = corrupted UX
+
+💡 Rule of Thumb: Pagination must be **idempotent and stateless** per request.
+
+---
+
+## Conclusion: Paginate with Purpose
+
+Pagination isn’t just about UX — it’s a **core API design principle**. Good pagination:
+- Protects backend systems
+- Enables infinite scaling
+- Empowers frontend teams
+- Reduces user frustration
+
+Design it with care. Test it at scale. Communicate it in your docs.
+
+And always remember: no one wants to scroll past the first 500 results anyway.
+

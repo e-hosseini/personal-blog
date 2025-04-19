@@ -1,77 +1,55 @@
 ---
-title: "Optimistic Updates — Perceived Performance at Its Best"
+title: "Optimistic Updates: Elevating Perceived Performance in Frontend Applications"
 slug: "optimistic-updates-performance"
 category: "Performance"
 tags: ["performance", "optimistic updates", "ux", "perceived speed", "frontend engineering"]
-summary: "Optimistic updates make apps feel instantaneous by predicting success and updating UI before confirmation. Learn how to do it right with React, React Query, SWR, and how it powers world-class UX."
+summary: "Optimistic updates provide a powerful approach to enhancing the perceived performance of applications by anticipating successful operations and updating the user interface (UI) before server confirmation. This article delves into the efficient implementation of optimistic updates using React, React Query, and SWR, and discusses how they can significantly improve user experience (UX)."
 publishedAt: "2022-09-02"
 ---
 
-# Optimistic Updates — Perceived Performance at Its Best
+# Optimistic Updates: Elevating Perceived Performance in Frontend Applications
 
-Users don’t care when the server finishes.
+In the realm of frontend development, the user's perception of an application's performance is often more impactful than the actual server response time. This perception, or **perceived responsiveness**, is what truly defines the user experience. One way to enhance this perceived responsiveness is through the use of **optimistic updates**. 
 
-They care when they **see something happen**.
+Optimistic updates, as the name suggests, optimistically assume that a requested change in the application will be successful, and consequently, the UI is updated immediately to reflect this anticipated success. The network request associated with the change is sent concurrently, and if the server response contradicts the optimistic assumption, the UI is rolled back or patched accordingly. 
 
-That’s why **optimistic updates** are a game-changer for frontend performance. They shift the focus from response time to **perceived responsiveness** — and that’s what defines user experience.
-
-In this guide, we’ll unpack:
-- What optimistic updates are
-- Why they’re a performance technique, not just UX
-- How to implement them in React, SWR, and React Query
-- Error handling, rollback, and real-world use cases
-- Anti-patterns to avoid when making your UI feel magical
+Consider the ubiquitous 'Like' button as a classic example of optimistic updates in action. When a user clicks the 'Like' button on a post, the UI immediately reflects the like - the heart icon fills up instantly, and the 'Like' count increments. The server call associated with the 'Like' action runs in the background, almost invisible to the user. 
 
 ---
 
-## What Are Optimistic Updates?
+## The Performance Enhancement Potential of Optimistic Updates
 
-An optimistic update is when you:
-1. Assume a mutation will succeed
-2. Update the UI as if it already has
-3. Send the network request in parallel
-4. Rollback or patch if the server disagrees
-
-Classic example: the Like button.
-
-You click. The heart fills immediately. Server call runs in the background.
+While optimistic updates do not technically reduce the actual latency of server responses, they significantly improve the perceived latency from the user's perspective. By immediately reflecting the anticipated success of an action in the UI, optimistic updates eliminate the frustrating wait times often associated with server responses. This leads to a smoother, more responsive user experience that is not marred by annoying loading spinners or unresponsive interfaces, even under suboptimal network conditions.
 
 ---
 
-## Why This Improves Performance
+## Implementing Optimistic Updates: A Deep Dive
 
-While optimistic updates don’t reduce **real latency**, they:
-- Remove **perceived latency**
-- Avoid spinner-driven experiences
-- Keep UI responsive even under poor conditions
-
-You **eliminate wait time** from the user's perspective.
-
----
-
-## React Implementation (Manual)
+The manual implementation of optimistic updates in React involves the use of the `useState` hook to manage the state of the UI element in question. For instance, consider the case of a 'Like' button:
 
 ```tsx
 const [liked, setLiked] = useState(false);
 
 const handleLike = () => {
-  setLiked(true); // Optimistic UI
+  setLiked(true); // Optimistic UI Update
 
   fetch("/api/like", { method: "POST" })
     .then(res => {
       if (!res.ok) throw new Error();
     })
     .catch(() => {
-      setLiked(false); // Rollback
+      setLiked(false); // Rollback upon unsuccessful server response
     });
 };
 ```
 
-This works — but requires manual rollback logic and error handling.
+In this example, the `useState` hook is used to maintain the `liked` state of the post. The `handleLike` function, triggered when the 'Like' button is clicked, optimistically sets the `liked` state to `true`, immediately reflecting the like in the UI. The corresponding network request to the server is sent concurrently. If the server response indicates an error, the `catch` block is executed, rolling back the optimistic update by setting the `liked` state back to `false`.
 
----
+While this manual implementation approach works, it necessitates the explicit handling of error cases and rollback logic.
 
-## React Query Implementation
+To streamline this process, libraries like React Query provide more efficient solutions. React Query provides the `useMutation` hook, which can handle rollbacks, deduplicate queries, and perform background validations, significantly simplifying the implementation of optimistic updates.
+
+Here is how the 'Like' button example could be implemented using React Query:
 
 ```tsx
 const mutation = useMutation(likePost, {
@@ -91,11 +69,9 @@ const mutation = useMutation(likePost, {
 });
 ```
 
-React Query handles rollback, deduping, and background validation.
+In this implementation, the `onMutate` method is called before the mutation, allowing you to make optimistic updates to the UI and cancel any outgoing queries related to the data being mutated. If the mutation fails, the `onError` method reverts the UI to its state prior to the mutation. After the mutation either succeeds or fails, the `onSettled` method is used to invalidate and refetch any queries related to the mutation.
 
----
-
-## SWR with Optimistic UI
+Another library that provides a more declarative approach to implementing optimistic updates is SWR. Here's how the previous example could be implemented using SWR:
 
 ```tsx
 mutate("/api/cart", async (cart) => {
@@ -105,73 +81,34 @@ mutate("/api/cart", async (cart) => {
 }, { optimisticData: [...data, newItem], rollbackOnError: true });
 ```
 
-SWR makes it declarative — one line for rollback, one for UI guess.
+In this code snippet, the `mutate` function is used to perform the optimistic update, with the `optimisticData` option providing the new state for the UI, and `rollbackOnError` ensuring that the UI is reverted to its previous state in the event of an error.
 
 ---
 
-## Real-World Apps That Use This
+## Real-World Applications of Optimistic Updates
 
-### Twitter
+Several popular applications leverage the power of optimistic updates to enhance their user experience:
 
-- Likes, retweets, bookmarks update instantly
-- Server syncs or corrects in the background
-
-### Notion
-
-- Offline-first edits stored and synced
-- User sees changes instantly — even before network sends them
-
-### Figma
-
-- Multi-user edits are optimistically applied and synced over WebSocket
+- **Twitter**: Actions such as liking, retweeting, and bookmarking tweets are reflected instantly in the UI, with the server sync happening in the background.
+- **Notion**: Changes made to documents in Notion are reflected instantly in the UI, even before the changes are sent to the server.
+- **Figma**: Changes made by multiple users are optimistically applied and then synced over a WebSocket.
 
 ---
 
-## When to Use It
+## Best Practices and Anti-Patterns
 
-✅ Good use cases:
-- Likes, stars, reactions
-- Form saves that are unlikely to fail
-- Add-to-cart interactions
-- Inline edits (e.g., settings toggles)
+While optimistic updates can greatly enhance the user experience, they should be used judiciously. They are best suited for actions that are unlikely to fail, such as liking a post, saving a form, adding items to a cart, or toggling settings. 
 
-❌ Avoid for:
-- Payments, purchases
-- Highly volatile server state
-- Multi-step workflows where rollback is hard
+However, for actions with potentially severe consequences, such as making payments or deleting data, or in situations where the server state is highly volatile, optimistic updates can lead to inconsistencies between the UI and the server state. Therefore, in such cases, it is advisable to wait for the server response before updating the UI.
+
+Another potential pitfall to avoid is not handling failures properly. If a server response contradicts an optimistic update and the UI is not rolled back correctly, it can lead to an inconsistent and confusing user experience. Similarly, using optimistic updates with destructive actions, such as deletion, or updating multiple pieces of state with no undo mechanism, can lead to irreversible mistakes.
 
 ---
 
-## Performance Metrics Improved
+## Conclusion: Harnessing the Power of Optimistic Updates
 
-- **Interaction to Next Paint (INP)**: UX feels responsive
-- **Time to Interactive (TTI)**: Interactions not blocked by fetch
-- **User-perceived latency**: Virtually eliminated
+Optimistic updates provide a powerful technique for improving the perceived performance of your application. By optimistically predicting the success of actions and reflecting these predictions immediately in the UI, they can make your application feel instantaneous. 
 
----
+However, while optimistic updates can significantly enhance the user experience, they also require careful handling of failure cases and rollback logic to ensure consistency between the UI and the server state. As such, they should be used judiciously and responsibly.
 
-## Anti-Patterns
-
-- Not handling failures (no rollback = inconsistent UI)
-- Optimistic update with destructive actions (e.g., deletion)
-- Updating multiple pieces of state with no undo
-- Assuming success when server may reject (e.g., auth, limits)
-
----
-
-## Conclusion: Predict the Future (Responsibly)
-
-Optimistic updates don’t just speed up your app.
-
-They **reshape time** — collapsing seconds into milliseconds.
-
-It’s a bet that most operations will succeed. When they do, your users experience **instant feedback**.
-
-And when they don’t? You’re ready to clean up the mess.
-
-Fast isn’t just about code execution.
-
-It’s about delivering the feeling of speed.
-
-Optimistic updates do exactly that.
-
+In the world of frontend development, delivering a fast, responsive user experience is often about perception. And optimistic updates, when used correctly, can go a long way in delivering the feeling of speed to your users.

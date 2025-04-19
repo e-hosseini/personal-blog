@@ -1,0 +1,225 @@
+---
+title: "Event Handlers — Bridging UI and Logic in Component Design"
+slug: "event-handlers"
+category: "Component APIs"
+tags: ["event handlers", "react", "events", "component apis", "interactivity"]
+summary: "A comprehensive look at event handlers in UI components. Learn how to architect clean, predictable event-driven behavior, pass callbacks, handle native vs synthetic events, and scale interactions in reusable frontend systems."
+publishedAt: "2022-05-27"
+---
+
+# Event Handlers — Bridging UI and Logic in Component Design
+
+In component-driven design, **event handlers** are the glue between static markup and dynamic behavior. They're how we make UIs **interactive, responsive, and intelligent** — responding to clicks, scrolls, keystrokes, pointer moves, and more.
+
+While it’s easy to attach a `onClick={...}` handler, architecting event systems in a way that scales across reusable components is a deeper skill. Great component APIs expose events in ways that are predictable, composable, and semantically rich — so parent components can respond with logic that feels natural.
+
+In this article, we’ll dive into:
+- Native vs synthetic events
+- Handler patterns in React
+- Composition vs delegation
+- Custom event signatures
+- Accessibility concerns
+- Real-world practices in design systems
+
+---
+
+## Why Event Handling Is Core to Component APIs
+
+Imagine a `<Button>` that can’t `onClick`. Or a `<Modal>` that doesn’t expose an `onClose`. Without event handlers, components are **passive** — unable to communicate intent or react to user behavior.
+
+Handlers are:
+- The primary way components express user intent
+- How logic moves from presentation to behavior
+- A contract between a component and its parent
+
+But as your system grows, simple handlers become more complex:
+- Should we call one handler or many?
+- What if both parent and child want to handle the same event?
+- Should we debounce? Prevent default? Capture phase?
+
+Answers depend on **how well you design your handler API**.
+
+---
+
+## React Event Handling Primer
+
+In React, all DOM events are normalized into **Synthetic Events** — wrappers over native browser events for cross-browser consistency.
+
+```tsx
+<button onClick={(e) => {
+  console.log(e.currentTarget); // Button
+}}>Click Me</button>
+```
+
+Synthetic events:
+- Support all standard DOM event types (`onClick`, `onChange`, `onKeyDown`, etc.)
+- Have pooled memory management (now mostly deprecated in React 17+)
+- Can be passed to custom components as props
+
+---
+
+## Passing Event Handlers to Components
+
+In component APIs, event handlers are typically **prop callbacks**:
+
+```tsx
+function Modal({ onClose }: { onClose: () => void }) {
+  return (
+    <button onClick={onClose}>
+      Close
+    </button>
+  );
+}
+```
+
+This makes the behavior **declarative and portable**. The parent defines what should happen when the event occurs — not the component itself.
+
+---
+
+## Composing Events in Reusable Components
+
+Often, a component needs to handle its **own event logic** *and* call the user's handler.
+
+```tsx
+function Button({ onClick }: { onClick?: () => void }) {
+  return (
+    <button onClick={(e) => {
+      // Internal behavior
+      trackClick("button");
+
+      // External behavior
+      onClick?.(e);
+    }}>
+      Click
+    </button>
+  );
+}
+```
+
+This pattern is critical for:
+- Analytics
+- Accessibility (e.g., toggling aria attributes)
+- Preventing conflicts or leaks
+
+💡 Always check if the user handler is defined before calling.
+
+---
+
+## Custom Event Signatures
+
+You can also define **custom event shapes**:
+
+```tsx
+type OnValueChange = (value: string, meta: { event: Event }) => void;
+
+function Input({ onChange }: { onChange: OnValueChange }) {
+  return (
+    <input onChange={(e) =>
+      onChange(e.target.value, { event: e })
+    } />
+  );
+}
+```
+
+This helps abstract away internal DOM quirks, normalize behavior, or provide richer metadata to the parent.
+
+---
+
+## Event Prop Naming Conventions
+
+Well-designed component libraries use **consistent naming**:
+
+| Purpose        | Prop Name      |
+|----------------|----------------|
+| Clicks         | `onClick`      |
+| Toggling state | `onToggle`     |
+| Input value    | `onChange`     |
+| Focus events   | `onFocus`, `onBlur` |
+| Submissions    | `onSubmit`     |
+| Dismissals     | `onClose`, `onCancel` |
+
+Custom events should follow semantic names, not just low-level DOM mappings.
+
+---
+
+## Real-World Examples
+
+### Radix UI
+
+Every interactive component exposes multiple handlers:
+
+```tsx
+<Dialog onOpenChange={fn} onCloseAutoFocus={fn} />
+```
+
+This enables fine-tuned control over behavior, transitions, and lifecycle without modifying internal logic.
+
+### Headless UI (Tailwind)
+
+Events are exposed and forwarded through custom components — giving full control to the parent without compromising reusability.
+
+### Material UI
+
+Uses synthetic events in all components, forwards handlers, and documents all expected event shapes. Integrates seamlessly with form libraries via custom change propagation.
+
+---
+
+## Accessibility and Events
+
+Keyboard events are as important as pointer events:
+
+```tsx
+onKeyDown={(e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    onClick?.();
+  }
+}}
+```
+
+- Use `role="button"` and `tabIndex={0}` if you're building a custom clickable component
+- Consider screen reader context for `onFocus`, `onBlur`, and `aria-*` attributes
+- Never rely on `onMouseDown` only — always provide `onKeyDown` for parity
+
+---
+
+## Event Forwarding in Component Composition
+
+You may want to forward handlers down to internal components:
+
+```tsx
+function Tooltip({ onMouseEnter, children }) {
+  return (
+    <div onMouseEnter={onMouseEnter}>
+      <TooltipContent />
+      {children}
+    </div>
+  );
+}
+```
+
+⚠️ Be careful not to override internal logic unless explicitly supported — composition should be additive, not destructive.
+
+---
+
+## Anti-Patterns
+
+- Mutating state inside external event handlers (breaks predictability)
+- Forgetting to call `preventDefault()` when needed (e.g., forms)
+- Double-binding events in both parent and child (can create infinite loops)
+- Using anonymous arrow functions everywhere (re-renders, hard to debug)
+- Ignoring async nature of some handlers (race conditions in updates)
+
+---
+
+## Conclusion: Events Are Your API's Expression Layer
+
+Event handlers are how your components communicate back to their consumers. They define the **behavioral surface area** — the hooks for logic, the entry points for UX.
+
+Design them like interfaces:
+- Name clearly
+- Validate consistently
+- Compose respectfully
+- Expose meaning, not just mechanics
+
+Because every component is just a container — until it starts to react.
+

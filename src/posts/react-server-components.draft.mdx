@@ -1,0 +1,132 @@
+---
+title: "React Server Components — Rethinking What Belongs on the Client"
+slug: "react-server-components"
+category: "Architecture"
+tags: ["react", "server components", "rsc", "performance", "data-fetching", "nextjs"]
+summary: "An in-depth look at React Server Components — a groundbreaking architecture that reshapes how we divide rendering work between client and server. Learn how Next.js, Vercel, and meta-level performance optimization leverage this powerful new model."
+publishedAt: "2022-11-04"
+---
+
+# React Server Components — Rethinking What Belongs on the Client
+
+React Server Components (RSCs) represent a fundamental rethinking of how React apps render. Instead of choosing between server-rendered pages and client-rendered SPAs, RSCs introduce a third option: React components that run **only on the server**, never sent to the browser, and can fetch data directly without hydration or bundling.
+
+With RSCs, you can render dynamic, data-rich UIs with less JavaScript on the client, lower network overhead, and simpler mental models for developers. Next.js 13+ (and its App Router) is the first production-grade framework to fully embrace RSCs — giving rise to a new era of hybrid rendering.
+
+This article dives deep into how RSCs work, what problems they solve, and how teams can use them to build leaner, faster, and more scalable frontend systems.
+
+---
+
+## What Are React Server Components?
+
+React Server Components are React components that:
+- Run only on the server
+- Can fetch data directly (e.g., from a database or API)
+- Return serialized output to be merged into the client-rendered UI
+- Do not include any JavaScript in the client bundle
+- Cannot use browser-only APIs (like `window`, `useEffect`, etc.)
+
+They are marked by the `.server.tsx` (or `.jsx`) extension and declared like any other component. These components are rendered by the server, then streamed to the browser as part of the page shell — no hydration, no bundle impact.
+
+---
+
+## The Why: Reducing Client Bundle Size
+
+One of the biggest bottlenecks in modern SPAs is JavaScript bundle bloat. Even with code splitting, tree shaking, and dynamic imports, many apps ship hundreds of KBs (or MBs) of JavaScript just to show basic content.
+
+RSCs let you **render entire UI trees without shipping any JavaScript for them**. For example, if you have a component that fetches blog post metadata, sorts it, and displays it in a table — but never re-renders or interacts — that can be a server component. It runs once, during the initial request, and then disappears. This keeps your client lean and fast.
+
+---
+
+## Data Fetching and Co-location
+
+In traditional SSR or CSR, data fetching logic is often separated from component logic — requiring `getServerSideProps`, `useEffect`, or custom hooks. With RSCs, you can colocate your data fetching with the component itself:
+
+```tsx
+// app/components/LatestPosts.server.tsx
+import { getPosts } from "@/lib/data";
+
+export default async function LatestPosts() {
+  const posts = await getPosts();
+  return (
+    <ul>
+      {posts.map((post) => <li key={post.id}>{post.title}</li>)}
+    </ul>
+  );
+}
+```
+
+No prop drilling. No context setup. No `useEffect`. Just logic near the UI.
+
+---
+
+## Shared UI with Client Components
+
+RSCs work hand-in-hand with traditional Client Components (now marked with `'use client'`). For example, you can render a server component that fetches data, and include an interactive comment form as a nested client component:
+
+```tsx
+// app/post/[id]/page.tsx
+import Post from "@/components/Post.server";
+import CommentForm from "@/components/CommentForm.client";
+
+export default function Page({ params }) {
+  return (
+    <>
+      <Post id={params.id} />
+      <CommentForm postId={params.id} />
+    </>
+  );
+}
+```
+
+This gives you fine-grained control over what gets hydrated and what doesn’t — minimizing JavaScript where possible.
+
+---
+
+## Streaming and Performance
+
+RSCs leverage React’s streaming architecture (introduced in React 18) to stream HTML as it’s ready. You don’t need to wait for the entire page to load. Instead, you send shells, load critical components first, and stream the rest.
+
+This leads to:
+- Faster Time to First Byte (TTFB)
+- Lower blocking render time
+- Fewer layout shifts and flashes of loading state
+
+This model aligns perfectly with modern rendering pipelines like Next.js App Router, where layouts, templates, and pages are stitched together from multiple async component trees.
+
+---
+
+## How RSCs Are Used in Production
+
+### Vercel / Next.js
+
+Next.js App Router fully embraces RSCs as the default rendering model. When you create a page under `/app`, it’s an RSC by default. Client Components are opt-in via `'use client'`.
+
+### Shopify Hydrogen
+
+Hydrogen 2.0 adopted server components to enable low-JS, data-rich storefronts with clean routing and no unnecessary hydration.
+
+### Internal Teams
+
+Many performance-obsessed companies are moving toward RSCs for dashboards, analytics apps, and reporting tools — anywhere data-rich, static content outweighs interactivity.
+
+---
+
+## Limitations and Gotchas
+
+- **No browser APIs**: You can't use `useEffect`, `window`, `localStorage` in RSCs.
+- **No context providers**: Server components can’t consume client-side contexts.
+- **Debugging can be hard**: Errors in async trees may not show meaningful stack traces.
+- **Tooling is early**: Many libraries and ecosystem tools don’t yet support RSCs fully.
+
+RSCs require a new mental model. They're not a replacement for CSR or SSR — they're a **layer**. Use them where they shine: data-heavy, UI-light, interaction-optional components.
+
+---
+
+## Conclusion: The New Default?
+
+React Server Components aren’t just a cool experiment — they’re quickly becoming the default in modern fullstack React. By rendering what you can on the server, and sending only what you must to the client, RSCs give you back the performance and modularity of server-rendered apps — with all the composability of React.
+
+Used well, they reduce bundle size, improve UX, and create clearer separation of concerns between server and browser code. They're not easy to master, but for teams building serious apps, they're absolutely worth it.
+
+RSCs change the question from “how do we hydrate this?” to “do we even need to?”

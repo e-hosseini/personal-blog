@@ -1,0 +1,194 @@
+---
+title: "WebSockets — Full-Duplex Real-Time Communication at Scale"
+slug: "websockets"
+category: "Real-time updates"
+tags: ["websockets", "real-time", "streaming", "protocol", "bidirectional"]
+summary: "An in-depth guide to WebSockets — the foundation for low-latency, bi-directional communication on the web. Learn how they work, how to scale them, and when to use them for live apps like chat, games, trading platforms, and collaborative UIs."
+publishedAt: "2023-05-26"
+---
+
+# WebSockets — Full-Duplex Real-Time Communication at Scale
+
+WebSockets are the **gold standard** for real-time communication in modern web applications.
+
+Unlike HTTP, which is request-response by nature, WebSockets establish a **persistent, bidirectional connection** between the client and server. Messages can flow in **both directions** at any time — without re-establishing the connection or waiting for a response.
+
+This makes WebSockets the ideal transport for:
+- Chat applications
+- Multiplayer games
+- Collaborative editing tools (like Figma or Google Docs)
+- Stock tickers, sports scores, real-time auctions
+- Live dashboards, telemetry streams, and control systems
+
+In this chapter, we’ll cover the **mechanics, architecture, and scalability concerns** of using WebSockets at scale.
+
+---
+
+## How WebSockets Work
+
+WebSockets start with an HTTP request using the `Upgrade` header:
+
+```http
+GET /chat HTTP/1.1
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+```
+
+Once accepted, the connection **upgrades** from HTTP to the WebSocket protocol, establishing a persistent TCP connection.
+
+From there:
+- Both client and server can send messages
+- Messages are framed using a binary/text protocol
+- The connection stays alive until closed
+
+---
+
+## Example: WebSocket Client (Browser)
+
+```js
+const socket = new WebSocket("wss://example.com/ws");
+
+socket.onopen = () => {
+  socket.send(JSON.stringify({ type: "join", room: "123" }));
+};
+
+socket.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log("New message:", data);
+};
+
+socket.onclose = () => {
+  console.log("Socket closed");
+};
+```
+
+This creates a **live pipe** between the browser and backend — perfect for low-latency messaging.
+
+---
+
+## Server Implementation (Node.js / ws)
+
+```js
+const WebSocket = require("ws");
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on("connection", (ws) => {
+  ws.send(JSON.stringify({ type: "welcome" }));
+
+  ws.on("message", (msg) => {
+    const data = JSON.parse(msg);
+    console.log("Received:", data);
+  });
+});
+```
+
+WebSocket servers can push messages to connected clients **at any time**, enabling features that polling and SSE can’t match.
+
+---
+
+## Use Cases
+
+- **Chat**: Send/receive messages instantly with minimal latency
+- **Games**: Coordinate movements, states, actions in real-time
+- **Collaborative Editing**: Share cursors, selections, changes live
+- **Live Trading**: Deliver stock ticks, forex updates, trades
+- **IoT & Monitoring**: Stream metrics and sensor data continuously
+
+---
+
+## WebSockets vs Polling vs SSE
+
+| Feature             | WebSocket        | SSE               | Polling        |
+|----------------------|------------------|--------------------|----------------|
+| Direction            | Bi-directional   | Server → Client    | Client → Server |
+| Connection           | Persistent       | Persistent         | Repeated       |
+| Latency              | ⚡ Instant        | ⚡ Fast             | ⚠️ Delayed     |
+| Proxy Friendly       | ⚠️ Sometimes      | ✅ Yes              | ✅ Yes         |
+| Binary Support       | ✅ Yes           | ❌ No               | ❌ No          |
+| Built-in Browser API | ✅ Yes (WebSocket)| ✅ Yes (EventSource)| ✅ fetch()     |
+
+---
+
+## Scaling WebSockets
+
+This is where things get real.
+
+WebSockets are **stateful** and **persistent**, which makes them harder to scale than stateless REST APIs.
+
+Strategies:
+- Use load balancers with sticky sessions (IP hash, cookie affinity)
+- Deploy a message broker (Redis pub/sub, Kafka, NATS) to broadcast messages across nodes
+- Use cloud-native WebSocket gateways (AWS API Gateway, Azure SignalR, Socket.IO adapters)
+- Separate WebSocket servers from core API servers
+
+Popular libraries:
+- `ws`, `uWebSockets.js` (Node.js)
+- `Socket.IO` (event-based wrapper)
+- `Phoenix Channels` (Elixir)
+- `Gorilla WebSocket`, `FastWS` (Go)
+
+---
+
+## WebSocket Security
+
+- Use `wss://` (TLS-secured)
+- Authenticate on connect (`token` in URL or initial message)
+- Use a short TTL or heartbeat (ping/pong) to detect idle clients
+- Throttle/bucket requests from abusive clients
+- Sanitize payloads — don’t trust incoming data blindly
+
+---
+
+## Heartbeats and Reconnection
+
+WebSocket clients should detect dead connections and auto-reconnect.
+
+Use `ping`/`pong` packets or application-level heartbeats (every 15–30s):
+
+```js
+setInterval(() => socket.send(JSON.stringify({ type: "ping" })), 15000);
+```
+
+Backend should respond or terminate stale sockets.
+
+---
+
+## Real-World Usage
+
+### Slack
+
+Uses WebSockets for messaging, presence, typing indicators, and more. Fall back to polling only when strictly necessary.
+
+### Figma
+
+Real-time design collaboration is powered by a distributed WebSocket grid with internal CRDTs (Conflict-free Replicated Data Types).
+
+### Binance / Coinbase
+
+Streaming market data, order books, and trade events via WebSockets for traders and bots.
+
+---
+
+## Anti-Patterns
+
+- Using WebSockets when SSE or polling is sufficient
+- Holding too many unused sockets open
+- Relying on global variables in multithreaded WebSocket servers
+- Trusting clients without validating messages
+- Not separating message transport from business logic
+
+---
+
+## Conclusion: Build for Real-Time, at Real Scale
+
+WebSockets unlock true interactivity — but they require planning, testing, and architectural thoughtfulness.
+
+Used well, they feel magical.
+
+Used poorly, they become a source of instability and pain.
+
+Choose WebSockets when the cost is justified — and when **real-time isn’t just a feature**, but a necessity.
+
+Because when every millisecond matters, there’s no substitute.

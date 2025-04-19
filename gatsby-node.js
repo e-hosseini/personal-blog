@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { createFilePath } = require('gatsby-source-filesystem');
 
 // Log MDX files for debugging
 exports.onPreInit = ({ reporter }) => {
@@ -18,49 +19,20 @@ exports.onPreInit = ({ reporter }) => {
   }
 };
 
-// Posts per page
+// Define the number of posts per page
 const POSTS_PER_PAGE = 10;
 
-// Create slug field for MDX files
-exports.onCreateNode = ({ node, getNode, actions, reporter }) => {
+// Create slugs for MDX files
+exports.onCreateNode = ({ node, actions, getNode }) => {
   const { createNodeField } = actions;
-  
-  // We only want to operate on MDX nodes
+
   if (node.internal.type === 'Mdx') {
-    reporter.info(`Processing MDX node: ${node.id}`);
-    
-    // For debugging
-    reporter.info(`Node internal type: ${node.internal.type}`);
-    reporter.info(`Node contentFilePath: ${node.internal.contentFilePath || 'undefined'}`);
-    
-    // Get the parent node (file node)
-    const parent = getNode(node.parent);
-    
-    if (!parent) {
-      reporter.warn(`No parent found for MDX node: ${node.id}`);
-      return;
-    }
-    
-    reporter.info(`Parent node: ${parent.id}, type: ${parent.internal.type}`);
-    
-    // Create slug from filename
-    let slug;
-    
-    if (parent.internal.type === 'File') {
-      slug = parent.name;
-      reporter.info(`Creating slug '${slug}' from file name`);
-    } else {
-      slug = path.basename(node.internal.contentFilePath || '', path.extname(node.internal.contentFilePath || ''));
-      reporter.info(`Creating slug '${slug}' from content file path`);
-    }
-    
+    const value = createFilePath({ node, getNode });
     createNodeField({
-      node,
       name: 'slug',
-      value: slug
+      node,
+      value: `/articles${value}`,
     });
-    
-    reporter.info(`Created slug field for node ${node.id}: ${slug}`);
   }
 };
 
@@ -68,14 +40,12 @@ exports.onCreateNode = ({ node, getNode, actions, reporter }) => {
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions;
 
-  reporter.info('Creating pages for MDX files and tags');
-
   const result = await graphql(`
     query {
       allMdx(
         filter: { internal: { contentFilePath: { regex: "/src/posts/" } } }
+        sort: { frontmatter: { publishedAt: DESC } }
       ) {
-        totalCount
         nodes {
           id
           internal {
@@ -94,9 +64,6 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
           totalCount
         }
       }
-      allFile {
-        totalCount
-      }
     }
   `);
 
@@ -106,44 +73,29 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   }
 
   const posts = result.data.allMdx.nodes;
-  const totalPosts = result.data.allMdx.totalCount;
   const tags = result.data.allMdx.group;
-  const totalFiles = result.data.allFile.totalCount;
 
   // Create blog post pages
-  posts.forEach((post) => {
+  posts.forEach((post, index) => {
     createPage({
       path: post.fields.slug,
-      component: `${path.resolve('./src/templates/post.tsx')}?__contentFilePath=${post.internal.contentFilePath}`,
+      component: `${path.resolve(`./src/templates/post.tsx`)}?__contentFilePath=${post.internal.contentFilePath}`,
       context: {
         id: post.id,
+        tags: post.frontmatter.tags,
+        previous: index === posts.length - 1 ? null : posts[index + 1],
+        next: index === 0 ? null : posts[index - 1],
       },
     });
   });
 
   // Create paginated blog list pages
-  const numPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
-  reporter.info(`Creating ${numPages} paginated pages for articles`);
-  
-  // Create redirect from /article to /articles
-  createPage({
-    path: '/article',
-    component: require.resolve('./src/templates/blog-list.tsx'),
-    context: {
-      limit: POSTS_PER_PAGE,
-      skip: 0,
-      numPages,
-      currentPage: 1,
-    },
-  });
+  const numPages = Math.ceil(posts.length / POSTS_PER_PAGE);
   
   Array.from({ length: numPages }).forEach((_, i) => {
-    const path = i === 0 ? '/articles' : `/articles/page/${i + 1}`;
-    reporter.info(`Creating page: ${path}`);
-    
     createPage({
-      path,
-      component: require.resolve('./src/templates/blog-list.tsx'),
+      path: i === 0 ? '/articles' : `/articles/page/${i + 1}`,
+      component: path.resolve('./src/templates/blog-list.tsx'),
       context: {
         limit: POSTS_PER_PAGE,
         skip: i * POSTS_PER_PAGE,

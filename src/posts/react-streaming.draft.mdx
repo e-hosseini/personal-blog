@@ -1,0 +1,102 @@
+---
+title: "Streaming — Rendering Without Waiting"
+slug: "react-streaming"
+category: "Architecture"
+tags: ["streaming", "react 18", "server rendering", "concurrent", "suspense"]
+summary: "An advanced breakdown of streaming in React 18 — how it enables faster page loads by sending content progressively, with Suspense as a control mechanism. Learn how frameworks like Next.js and Remix leverage it for performance."
+publishedAt: "2022-11-11"
+---
+
+# Streaming — Rendering Without Waiting
+
+For most of the web’s history, server rendering has been an all-or-nothing affair. Either you waited for all data to resolve and then sent HTML — or you sent a static shell and hydrated everything later with JavaScript. Both had drawbacks.
+
+**So why was streaming invented?**
+
+The core motivation came from user experience: large, data-driven apps were either slow to load (due to monolithic SSR) or fast but empty (due to CSR skeletons). Streaming emerged from a need to **bridge the gap** — to serve something fast **and** useful without waiting for everything.
+
+The first seeds were planted by React’s early discussions on async rendering. As applications grew more dynamic and data-heavy, the need for **granular rendering control** became critical. React 18, with its concurrent rendering engine, brought streaming to life — a model where HTML can begin flowing to the browser **while rendering continues server-side**.
+
+Today, it powers frameworks like Next.js and Remix, redefining how fast, interactive, progressive web apps are built and delivered.
+
+---
+
+## What Is Streaming in React?
+
+Streaming means that instead of building an entire HTML page and sending it at once, the server begins sending parts of the HTML as soon as they’re rendered — often within milliseconds.
+
+React supports this using `renderToPipeableStream()` (Node) and `renderToReadableStream()` (Edge). These methods allow the response stream to start flowing while slower parts of the UI (like data-fetching components) finish in parallel.
+
+---
+
+## Suspense: The Control Plane
+
+React’s `<Suspense>` component is the orchestration layer for streaming.
+
+You can wrap any part of your component tree in `<Suspense fallback={<Loading />}>` and React will render the fallback until the data is ready — then stream the actual content.
+
+```tsx
+<Suspense fallback={<LoadingPosts />}>
+  <PostsList />
+</Suspense>
+```
+
+React will:
+1. Render `<LoadingPosts />` immediately
+2. Stream it to the browser
+3. Continue rendering `<PostsList />` in parallel
+4. Replace the fallback in-place when done
+
+This allows incremental hydration and reduces layout shifts.
+
+---
+
+## Use Cases in Production
+
+### Next.js App Router
+
+Next.js supports React streaming out of the box via its `app/` directory. Page layouts, templates, and components are streamed progressively using `renderToReadableStream` for Edge and `renderToPipeableStream` for Node.
+
+This enables:
+- Page shells to render instantly
+- Data fetching to happen concurrently with HTML streaming
+- Lower TTFB for large pages
+
+### Remix
+
+Remix embraces streaming deeply. Since data loading is done in parallel for all routes and loaders, content is streamed as it becomes available. The result is more resilient and responsive UIs, especially for nested layouts and complex pages.
+
+---
+
+## Real-World Benefits
+
+Streaming provides:
+- **Faster FCP (First Contentful Paint)**
+- **Better LCP (Largest Contentful Paint)**
+- **Improved UX on slow networks**
+- **Less layout jank and fewer "blank screens"**
+
+It lets developers balance immediate feedback with async loading — showing users meaningful progress without stalling entire renders.
+
+---
+
+## Technical Considerations
+
+- Streaming must be supported by the host (Node or Edge).
+- You need to send the correct `Content-Type` (`text/html; charset=utf-8`).
+- Middleware and edge logic can interrupt or delay streams if misconfigured.
+- Suspense boundaries must be carefully placed — too many can create visual noise.
+
+Error handling is also different: streamed content might already be flushed before an error occurs. Use error boundaries and fallback UIs thoughtfully.
+
+---
+
+## Conclusion: Streaming as the New Standard
+
+Streaming is the most important frontend rendering innovation since SSR. It lets you stop waiting, start rendering, and progressively show users what matters most — without blocking the rest.
+
+Combined with Suspense, it forms the basis for a new kind of app architecture: one that’s **responsive by default**, even under slow networks, heavy data, or global latency.
+
+It’s not just faster.
+
+It’s **smarter rendering**.

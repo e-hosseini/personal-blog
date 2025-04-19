@@ -9,38 +9,17 @@ publishedAt: "2022-01-28"
 
 # API Error Handling — Designing for Clarity, Debugging, and Trust
 
-Your API is going to fail. Period.
-
-What matters is **how it fails** — and what it communicates when it does.
-
-A great API doesn’t just succeed elegantly. It fails **intelligently**. It explains, recovers, and guides developers toward resolution. And it does so **consistently**.
-
-This article is a deep dive into how modern APIs — REST, GraphQL, and beyond — handle errors at scale. We’ll cover status codes, error payloads, developer experience, observability, retries, and best practices from leading platforms.
-
----
+APIs — the backbone of modern web applications — are not immune to failures. However, the quality of an API is gauged not just by its successful operations but also by how well it handles failures. An API that fails intelligently is one that provides clear, explanatory error messages, recovers gracefully, and guides developers towards resolution in a consistent manner. This article will delve into the intricacies of error handling in modern APIs — REST, GraphQL, and beyond. We will explore the use of status codes, structure of error payloads, importance of developer experience, the need for observability, handling retries, and some of the best practices adopted by leading platforms.
 
 ## Why Error Handling Matters
 
-Unclear error messages are a productivity killer. They:
-- Waste developer time
-- Lead to customer frustration
-- Break automation scripts and clients
-- Increase support tickets and onboarding friction
-
-Your error response is part of your developer interface — as important as your success payloads.
-
----
+Error handling is not just about catching and reporting errors but also about enhancing the overall developer and user experience. Ambiguous or unclear error messages can lead to a myriad of issues like wasted developer time, customer frustration, breaking of automation scripts and clients, and an increase in support tickets and friction during onboarding. Thus, the way your API responds to errors forms a crucial part of your developer interface and should be as meticulously designed as your success payloads.
 
 ## The Anatomy of a Good API Error
 
-Whether REST or GraphQL, good error responses have:
-- A clear **error code**
-- A human-readable **message**
-- A machine-readable **type**
-- Optional **details** for debugging
-- A consistent schema across all endpoints
+Good error responses, regardless of whether they are from REST or GraphQL APIs, have certain common characteristics. They should contain a clear error code for identification, a human-readable message for easy understanding, a machine-readable type for automated error handling, optional details for debugging, and most importantly, they should follow a consistent schema across all endpoints.
 
-### Example (REST)
+Here's an example of a well-structured error response in a REST API:
 
 ```json
 {
@@ -53,7 +32,9 @@ Whether REST or GraphQL, good error responses have:
 }
 ```
 
-### Example (GraphQL)
+In the above example, the error code `invalid_request` indicates the type of error. The `message` provides a human-readable explanation of the error while the `field` identifies the specific field that caused the error. The `status` field contains the HTTP status code associated with the error.
+
+For a GraphQL API, the error response might look like this:
 
 ```json
 {
@@ -71,11 +52,11 @@ Whether REST or GraphQL, good error responses have:
 }
 ```
 
----
+In this case, the `errors` array contains one object per error. The `message` and `code` fields have the same purpose as in the REST example. The `path` field here is an array that points to the specific field in the GraphQL query that caused the error. The `timestamp` in the `extensions` provides additional context about when the error occurred.
 
 ## HTTP Status Codes (REST)
 
-Using the right code matters. Some guidelines:
+HTTP status codes serve as a standardized way to communicate the status of a HTTP request. Using the correct status code for each type of error is essential for interoperability and for allowing clients to handle errors appropriately. Here are some of the most commonly used status codes:
 
 | Status | Meaning                      | Use For                        |
 |--------|-------------------------------|--------------------------------|
@@ -92,19 +73,13 @@ Using the right code matters. Some guidelines:
 | 500    | Internal Server Error         | Generic failure                |
 | 503    | Service Unavailable           | Server down / retryable        |
 
-💡 Tip: Stick to this core set. Avoid rarely-used codes that confuse clients.
-
----
+It's advisable to stick to this core set of status codes and avoid rarely-used codes that could confuse clients or lead to improper error handling.
 
 ## GraphQL and Error Handling
 
-GraphQL returns 200 OK **even on errors**. Errors are placed inside the `errors` field, not reflected by HTTP status.
+Error handling in GraphQL is done a bit differently compared to REST. In GraphQL, even when an error occurs, the HTTP status code is always 200 OK. Instead, the errors are placed inside an `errors` field in the response body. This bifurcates the error handling into two layers — the network layer where the HTTP status is always 200 and the application layer where the success or failure is indicated inside the response body.
 
-This creates a dual world:
-- Network layer: always 200
-- App layer: success or failure inside response body
-
-Best practice is to include an `extensions.code` for all error types:
+A best practice in GraphQL is to include a `code` field inside an `extensions` field for all error types, as shown below:
 
 ```json
 {
@@ -115,89 +90,52 @@ Best practice is to include an `extensions.code` for all error types:
 }
 ```
 
-Frameworks like Apollo, urql, and Relay help manage these errors with hooks and typed responses.
-
----
+Here, the `code` works the same way as the HTTP status code in REST, indicating the type of error. The `details` field can include additional information about the error for debugging purposes. GraphQL frameworks such as Apollo, urql, and Relay provide hooks and typed responses to help manage these errors.
 
 ## Real-World Examples
 
-### Stripe
+Let's look at how some of the leading platforms handle API errors:
 
-Stripe includes:
-- Status code
-- Error type (`card_error`, `api_error`, `validation_error`)
-- Error code (`invalid_number`)
-- Field (`card[number]`)
-- Helpful message (`Your card number is invalid`)
+**Stripe** adopts a comprehensive approach to error handling. Their error responses include status code, error type (like `card_error`, `api_error`, `validation_error`), error code (`invalid_number`), the specific field that caused the error (`card[number]`), and a helpful message (`Your card number is invalid`). This makes their responses predictable, easy to localize, and well-documented.
 
-Their responses are **predictable, localized, and documented**.
+**GitHub**'s GraphQL API includes an error path, code, message, and hints for invalid queries, schema errors, and authentication failures in the error responses. 
 
-### GitHub
-
-GraphQL errors include:
-- Error path
-- Code
-- Message
-- Hints for invalid queries, schema errors, and auth failures
-
-### Shopify
-
-Includes `errors` key in responses with:
-- `message`
-- `code`
-- `field`
-- Optional debug headers
-
----
+**Shopify** includes a `errors` key in their responses, which contains a `message`, `code`, `field`, and optional debug headers.
 
 ## Observability and Logging
 
-All API errors should be:
-- Logged with full context (user ID, headers, request ID)
-- Correlated with tracing spans
-- Reported via alerting if error rate spikes
-- Easily queryable by engineers and support teams
-
-Use structured logs (JSON) and group errors by `type`, not just message strings.
-
----
+For efficient troubleshooting, all API errors should be logged with full context, including user ID, headers, and request ID. These logs should be correlated with tracing spans for tracking the request flow. They should also be reported via alerting mechanisms if the error rate spikes or exceeds a certain threshold. Structured logs, preferably in JSON format, make it easier for engineers and support teams to query and analyze the errors. It's also advisable to group errors by `type` rather than just message strings for more granular analysis.
 
 ## Retryability and Safety
 
-Errors must signal whether they’re **retryable**:
-- ✅ 503, 429 → retry with backoff
-- ❌ 400, 401, 403 → don’t retry
+Errors should also indicate whether they’re retryable. 
 
-Include `Retry-After` headers when appropriate. And mark non-idempotent requests clearly to avoid double effects (e.g., duplicate orders).
+For instance, in HTTP, status codes like 503 Service Unavailable and 429 Too Many Requests indicate that the request could be retried after a certain interval. On the other hand, status codes like 400 Bad Request, 401 Unauthorized, and 403 Forbidden signify non-retryable errors as retrying won't change the outcome.
 
----
+The `Retry-After` header can be included in the response to indicate when the client can retry the request. It's also important to clearly mark non-idempotent requests to avoid duplicate effects, like creating duplicate orders.
 
 ## Developer UX Best Practices
 
-- Document every error code and example in your API docs
-- Use consistent field names: `code`, `message`, `field`, `details`
-- Avoid 500 for expected errors (e.g., user already exists)
-- Make messages user-friendly but detailed enough for devs
-- Localize errors when needed for end-user presentation
-
----
+- Document all the error codes and examples in your API documentation for easy reference.
+- Use consistent field names like `code`, `message`, `field`, `details` across all error responses.
+- Avoid using 500 Internal Server Error for expected errors. For instance, use 409 Conflict when a user already exists instead of 500.
+- Make the error messages user-friendly and yet detailed enough for developers to understand the root cause.
+- Localize errors if they are intended to be presented to the end-user.
 
 ## Anti-Patterns
 
-- Using 200 for all responses (except GraphQL)
-- Generic `message: "Something went wrong"` errors
-- Failing silently with 204 when an error occurred
-- Mixing validation errors with generic API errors
-- Logging only message, not context
+Avoid these common pitfalls while handling API errors:
 
----
+- Using 200 OK for all responses. This is only acceptable in GraphQL.
+- Returning generic error messages like "Something went wrong".
+- Returning 204 No Content when an error occurred. This could lead to silent failures.
+- Mixing validation errors with generic API errors. It's better to separate them for clarity.
+- Logging only the error message and not the context. This makes troubleshooting difficult.
 
 ## Conclusion: Good Errors Are a Feature
 
-Error handling isn’t just a fail-safe — it’s a **feature**.
+Error handling isn’t just a fail-safe — it’s a feature. A thoughtfully designed error handling strategy can make developers more productive, systems more observable, and users more confident. The key is to design the failure modes as intentionally as the success paths.
 
-Done right, it makes developers more productive, systems more observable, and users more confident. It’s not enough to catch and return. You have to **design** the failure modes as intentionally as the success paths.
-
-Errors happen. Let them teach you — and help your users recover.
+Errors happen. Let them be an opportunity to learn, improve, and help your users recover.
 
 Design errors like you design APIs: with clarity, consistency, and care.

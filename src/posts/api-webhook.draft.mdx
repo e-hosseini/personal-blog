@@ -1,0 +1,199 @@
+---
+title: "Webhooks — Real-Time Communication Without Polling"
+slug: "api-webhooks"
+category: "Back end APIs"
+tags: ["webhooks", "real-time", "callbacks", "api", "notifications"]
+summary: "Explore webhooks — a powerful way to deliver real-time updates from your backend to external systems. Learn how to design, secure, retry, and debug webhook systems at scale, with examples from Stripe, GitHub, and Slack."
+publishedAt: "2022-02-25"
+---
+
+# Webhooks — Real-Time Communication Without Polling
+
+Most APIs are **request-driven** — the client asks, and the server answers. But what if the client doesn’t know when to ask?
+
+That’s where **webhooks** come in.
+
+Webhooks reverse the flow. Instead of the client polling every few seconds, the server proactively **pushes updates** to the client when an event happens — new order, user signup, payment completed, repo pushed, and more.
+
+They’re essential for building connected systems, enabling integrations, and delivering **real-time UX** without infrastructure bloat.
+
+---
+
+## The Problem Webhooks Solve
+
+Imagine a user updates their billing info in Stripe.
+
+Without webhooks, your app must:
+- Periodically poll Stripe for changes
+- Waste resources checking when nothing changed
+- Miss updates in between polling intervals
+
+With webhooks:
+- Stripe sends you a `customer.updated` event instantly
+- You process it immediately
+- The user’s profile reflects the update in real-time
+
+Webhooks are how systems **notify each other**, just-in-time.
+
+---
+
+## Core Webhook Concepts
+
+- **Event**: Something that happened (`user.created`, `order.shipped`)
+- **Receiver (consumer)**: Your server that receives the event
+- **Payload**: JSON body with data about the event
+- **Signature**: A cryptographic hash to verify authenticity
+- **Retry logic**: In case the receiver is down or slow
+
+Webhooks typically use:
+- HTTP POST
+- JSON payloads
+- Retries with exponential backoff
+- Authentication headers or HMAC signatures
+
+---
+
+## Example Webhook Payload
+
+```http
+POST /webhooks/stripe HTTP/1.1
+Content-Type: application/json
+Stripe-Signature: t=12345,v1=abc,v2=...
+
+{
+  "type": "invoice.paid",
+  "data": {
+    "object": {
+      "id": "in_123",
+      "amount_paid": 4200
+    }
+  }
+}
+```
+
+---
+
+## Design Patterns for Webhooks
+
+- Use **dedicated webhook routes** (`/webhooks/stripe`, `/hooks/github`)
+- Respond quickly (under 1s) to avoid timeouts
+- Queue long-running logic (e.g. with Redis, SQS, or background workers)
+- Log every payload and status for observability
+- Use **idempotency** — don’t double-process
+
+💡 Always return **2xx** to confirm delivery. Retry logic depends on this.
+
+---
+
+## Securing Webhooks
+
+- ✅ Validate HMAC signatures (e.g. SHA256 with secret key)
+- ✅ Check the `User-Agent` or custom headers
+- ✅ Enforce IP allowlists (for critical systems)
+- ✅ Reject unexpected payload shapes or events
+
+Example: Stripe HMAC verification (Node.js)
+
+```ts
+const event = stripe.webhooks.constructEvent(
+  req.body,
+  req.headers['stripe-signature'],
+  STRIPE_SECRET
+);
+```
+
+Never trust unauthenticated incoming HTTP requests without validation.
+
+---
+
+## Retry Logic and Reliability
+
+Webhook systems must assume:
+- The consumer may be down
+- Timeouts will happen
+- Delivery is not guaranteed without retries
+
+Use **exponential backoff**, retry for at least 24–72 hours, and log failures with:
+- Status code
+- Time received
+- Body
+- Headers
+
+Some platforms include dashboards to inspect and resend (e.g. Stripe, GitHub, Slack).
+
+---
+
+## Webhook Consumers: Best Practices
+
+- Respond with `2xx` only after success
+- Use unique IDs for deduplication
+- Write tests for idempotency
+- Monitor webhook delivery rate and latency
+- Store `event_id` or payload hash for traceability
+
+---
+
+## Real-World Examples
+
+### Stripe
+
+- Fires dozens of event types (`payment_intent.succeeded`, `invoice.failed`)
+- Uses HMAC signatures + secret keys
+- Provides retries and a webhook dashboard with resends
+
+### GitHub
+
+- Sends push events, pull request events, deployment hooks
+- Supports secret token signing
+- Allows delivery tracing per event
+
+### Slack
+
+- Uses incoming/outgoing webhooks for custom integrations
+- Provides test tool and retry simulation
+- Payloads include timestamps, user metadata, and message content
+
+---
+
+## Debugging Webhooks
+
+Use tools like:
+- [Webhook.site](https://webhook.site)
+- [RequestBin](https://requestbin.com)
+- [Ngrok](https://ngrok.com)
+- [Stripe CLI](https://stripe.com/docs/stripe-cli)
+
+Log **everything** in staging and production:
+- Timestamps
+- Headers
+- Event types
+- Request/response bodies
+- Retry counts
+
+---
+
+## Anti-Patterns
+
+- Blocking your app on webhook success
+- Not validating sender identity
+- Assuming once-only delivery
+- Ignoring failed retries
+- Letting 3rd-party webhook failures break internal workflows
+
+---
+
+## Conclusion: Webhooks Are APIs in Reverse
+
+Webhooks make your systems smarter. They remove guesswork, reduce load, and unlock powerful integrations across platforms and teams.
+
+They aren’t an afterthought — they’re a core part of modern architecture.
+
+Design them with the same care you give to endpoints:
+- Secure them
+- Log them
+- Make them resilient
+- And most of all — **make them useful**.
+
+APIs are how we ask.
+
+Webhooks are how we listen.

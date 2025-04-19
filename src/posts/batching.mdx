@@ -1,47 +1,47 @@
 ---
-title: "Batching — Making Fewer Requests That Do More"
-slug: "batching"
-category: "Networking Techniques"
+title: "Batching — A Sophisticated Approach to Network Optimization"
+slug: "advanced-batching"
+category: "Advanced Networking Techniques"
 tags: ["batching", "api", "requests", "performance", "graphql", "http"]
-summary: "Learn how to optimize frontend networking using batching — combining multiple requests into one. Explore use cases, patterns, GraphQL batching, real-world implementations, and best practices."
+summary: "Delve into the intricacies of optimizing frontend networking through batching, a method that consolidates multiple requests into a single one. This exposition will explore the fundamentals, use cases, patterns, GraphQL implementations, industry applications, and best practices, along with a detailed comparison between batching, parallelism, and streaming."
 publishedAt: "2022-03-04"
 ---
 
-# Batching — Making Fewer Requests That Do More
+# Batching — A Sophisticated Approach to Network Optimization
 
-Every time your frontend makes a network request, it pays a price: latency, headers, CPU, parsing, and server load. What if you could **do more with fewer requests**?
+Every network request initiated by a frontend application incurs a cost — latency, headers, CPU usage, parsing overhead, and server load. The question is, **can we optimize to do more with fewer requests?**
 
-That’s where batching comes in.
+The answer lies in the strategy known as **batching**.
 
-**Batching** is the strategy of combining multiple related network operations into a **single request**, reducing round-trips and improving performance — especially on high-latency connections or over-constrained APIs.
+**Batching** is a sophisticated approach that amalgamates multiple related network operations into a **singular request**, thereby curtailing the round-trip time and enhancing performance. This strategy is particularly advantageous on high-latency networks or when interacting with restricted APIs.
 
-In this guide, we’ll explore:
-- What batching is and why it matters
-- When and how to use it
+In this comprehensive guide, we will delve into:
+- The fundamentals and significance of batching
+- The identification and utilization of batching
 - Implementation strategies in REST, GraphQL, and beyond
-- Real-world patterns from Google, Slack, and GitHub
-- Batching vs parallelism vs streaming
+- Real-world implementation patterns observed in Google, Slack, and GitHub
+- A comparative analysis of batching, parallelism, and streaming
 
 ---
 
-## Why Batching?
+## The Rationale Behind Batching
 
-Reasons to batch requests:
-- Reduce round-trip latency (especially mobile)
-- Cut down on redundant headers
-- Improve backend efficiency (e.g., avoid N+1 queries)
-- Lower client complexity by grouping similar ops
-- Align multiple reads or writes into atomic actions
+Batching is driven by the need to:
+- Minimize round-trip latency, especially on mobile networks
+- Eliminate redundant headers
+- Boost backend efficiency (e.g., prevent N+1 query problems)
+- Simplify client-side complexity by grouping similar operations
+- Combine multiple read or write operations into atomic actions
 
-You’ll often hear this as: **“fetch all at once instead of piecemeal”**.
+This concept often echoes as: **“fetch all at once instead of piecemeal”**.
 
 ---
 
-## Examples of Batching
+## Illustrations of Batching
 
-### REST Example
+### REST Batching
 
-Instead of:
+In a typical REST scenario, instead of executing multiple GET requests as shown:
 
 ```http
 GET /api/user/1
@@ -49,7 +49,7 @@ GET /api/user/2
 GET /api/user/3
 ```
 
-Send:
+You can consolidate these into a single operation either by POST or GET:
 
 ```http
 POST /api/users/batch
@@ -62,7 +62,8 @@ Or:
 GET /api/users?ids=1,2,3
 ```
 
-Return a single payload:
+Then, return a single payload:
+
 ```json
 [
   { "id": 1, "name": "A" },
@@ -71,11 +72,13 @@ Return a single payload:
 ]
 ```
 
+This way, you are reducing the network overhead by executing a single HTTP request instead of three.
+
 ---
 
 ### GraphQL Batching
 
-GraphQL supports batching queries:
+GraphQL, in its design, inherently supports batching of queries:
 
 ```json
 [
@@ -84,22 +87,22 @@ GraphQL supports batching queries:
 ]
 ```
 
-The server resolves both and returns a combined response.
+In the above scenario, the server resolves both queries and returns a combined response.
 
-Tools like **Apollo Client**, **Relay**, and **urql** batch by default or via config.
+GraphQL client-side libraries such as **Apollo Client**, **Relay**, and **urql** natively support batching or allow configuration for the same.
 
 ---
 
 ### UI-Level Batching
 
-In React, you can batch dependent requests before rendering:
+In a React application, you can batch dependent requests before rendering:
 
 ```tsx
 const user = await fetchUser();
 const projects = await fetchProjects(user.id);
 ```
 
-Or batch related queries using `useQueries` (React Query):
+Alternatively, batch related queries using `useQueries` (a feature of React Query):
 
 ```tsx
 const results = useQueries([
@@ -108,20 +111,22 @@ const results = useQueries([
 ]);
 ```
 
+In this scenario, `useQueries` provides a streamlined and efficient way to execute multiple asynchronous requests simultaneously, thereby improving application performance.
+
 ---
 
 ## When Should You Batch?
 
-✅ Good candidates:
-- Lists with multiple items (e.g., IDs, filters)
-- Dashboard views with many sections
+Batching is an ideal choice when dealing with:
+- Lists that contain multiple items (e.g., IDs, filters)
+- Dashboard views comprising many sections
 - Related mutations (e.g., saving a form group)
 - Repeated data fetching on component mount
 
-❌ Avoid batching:
-- Across unrelated operations
-- If latency isn’t a bottleneck
-- For real-time UIs where freshness > bundling
+However, batching might not be the best solution:
+- For unrelated operations
+- If network latency isn't a significant issue
+- For real-time user interfaces where data freshness is more critical than bundling
 
 ---
 
@@ -129,7 +134,7 @@ const results = useQueries([
 
 ### 1. Client-Side Queue with Delay
 
-Buffer multiple requests for 5–50ms, then send together:
+Buffer multiple requests for a short duration, let's say 5–50ms, and then send them together:
 
 ```ts
 const queue = [];
@@ -148,25 +153,25 @@ function batchRequest(request) {
 }
 ```
 
-Used in: Apollo Link Batching, Google API batching
+This strategy is implemented in Apollo Link Batching and Google API batching. The delay allows time for additional requests to be added to the batch, thus optimizing the network load.
 
 ---
 
 ### 2. URL Merging
 
-Use query params to encode batch:
+Encode the batch into query parameters:
 
 ```http
 GET /api/posts?ids=1,2,3,4
 ```
 
-The server reads and resolves in a single DB call.
+In this case, the server reads the encoded parameters and resolves them in a single DB call.
 
 ---
 
 ### 3. Batched Mutations
 
-Group multiple writes:
+Group multiple write operations:
 
 ```ts
 POST /api/cart/batch
@@ -176,7 +181,7 @@ Body: [
 ]
 ```
 
-Run transactionally or sequentially.
+These operations can be executed either transactionally or sequentially. This method is efficient when you need to perform multiple operations at once, like updating a shopping cart.
 
 ---
 
@@ -184,40 +189,39 @@ Run transactionally or sequentially.
 
 ### Slack
 
-- Message history API batches 100+ messages
-- Typing indicators batched and throttled
+- Slack's Message history API batches over 100 messages at once.
+- Typing indicators are batched and throttled for optimal performance.
 
 ### GitHub
 
-- GraphQL used to batch repo/PR/commit info in one payload
-- Avoids dozens of REST calls on repo page
+- GitHub leverages GraphQL to batch repository, PR, and commit information in a single payload.
+- This approach helps avoid dozens of REST calls on the repository page, enhancing loading speed and user experience.
 
 ### Google APIs
 
-- `batch` endpoint used to submit multiple requests in one
-- Uses `multipart/mixed` content type
+- Google APIs offer a `batch` endpoint used to submit multiple requests in one go.
+- This endpoint uses `multipart/mixed` content type to handle multiple requests.
 
 ---
 
 ## Anti-Patterns
 
-- Batching unrelated data (hurts cacheability)
-- Rebatching already-resolved cache data
-- Large batches causing timeouts or memory pressure
-- Overengineering batching for small payloads
-- Batching mutations that shouldn’t be atomic (e.g., financial ops)
+- Batching unrelated data can hurt cacheability.
+- Rebatching already-resolved cache data can lead to unnecessary computational overhead.
+- Large batches may cause timeouts or memory pressure.
+- Overengineering batching for small payloads can lead to unnecessary complexity.
+- Batching mutations that shouldn’t be atomic (like financial operations) can lead to logical inconsistencies.
 
 ---
 
-## Conclusion: Batch With Intent, Not By Default
+## Conclusion: Apply Batching Intentionally, Not By Default
 
-Batching is a powerful tool — but only when used with care.
+Batching is a powerful tool, but only when applied judiciously.
 
-It’s not about “less code” or “fewer lines.” It’s about **network efficiency** and **user-perceived speed**.
+It’s not about reducing the lines of code or simplifying the codebase. It's about **network efficiency** and **user-perceived speed**.
 
-If one request is good, five might be better together.
+While one request may be good, bundling five might yield better performance.
 
-But only if they **belong** together.
+However, it's important to ensure that they **belong** together.
 
-Batch smart. Batch small. Batch with purpose.
-
+As we conclude, remember to batch intelligently, batch on a small scale, and batch with a clear purpose.

@@ -1,0 +1,203 @@
+---
+title: "API Error Handling — Designing for Clarity, Debugging, and Trust"
+slug: "api-error-handling"
+category: "Back end APIs"
+tags: ["api", "error handling", "http", "graphql", "rest", "resilience"]
+summary: "A comprehensive exploration of API error handling. Learn how to structure errors, choose the right status codes, and build clear, actionable responses that help both developers and users succeed."
+publishedAt: "2022-01-28"
+---
+
+# API Error Handling — Designing for Clarity, Debugging, and Trust
+
+Your API is going to fail. Period.
+
+What matters is **how it fails** — and what it communicates when it does.
+
+A great API doesn’t just succeed elegantly. It fails **intelligently**. It explains, recovers, and guides developers toward resolution. And it does so **consistently**.
+
+This article is a deep dive into how modern APIs — REST, GraphQL, and beyond — handle errors at scale. We’ll cover status codes, error payloads, developer experience, observability, retries, and best practices from leading platforms.
+
+---
+
+## Why Error Handling Matters
+
+Unclear error messages are a productivity killer. They:
+- Waste developer time
+- Lead to customer frustration
+- Break automation scripts and clients
+- Increase support tickets and onboarding friction
+
+Your error response is part of your developer interface — as important as your success payloads.
+
+---
+
+## The Anatomy of a Good API Error
+
+Whether REST or GraphQL, good error responses have:
+- A clear **error code**
+- A human-readable **message**
+- A machine-readable **type**
+- Optional **details** for debugging
+- A consistent schema across all endpoints
+
+### Example (REST)
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Missing required field: email",
+    "field": "email",
+    "status": 400
+  }
+}
+```
+
+### Example (GraphQL)
+
+```json
+{
+  "errors": [
+    {
+      "message": "User not found",
+      "path": ["user"],
+      "extensions": {
+        "code": "NOT_FOUND",
+        "status": 404,
+        "timestamp": "2024-03-21T18:20:33Z"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## HTTP Status Codes (REST)
+
+Using the right code matters. Some guidelines:
+
+| Status | Meaning                      | Use For                        |
+|--------|-------------------------------|--------------------------------|
+| 200    | OK                            | Success                        |
+| 201    | Created                       | Resource successfully made     |
+| 204    | No Content                    | Delete success                 |
+| 400    | Bad Request                   | Client mistake (missing params)|
+| 401    | Unauthorized                  | Missing/invalid auth           |
+| 403    | Forbidden                     | Authenticated but not allowed  |
+| 404    | Not Found                     | Missing resource               |
+| 409    | Conflict                      | Versioning/state conflicts     |
+| 422    | Unprocessable Entity          | Validation errors              |
+| 429    | Too Many Requests             | Rate limiting                  |
+| 500    | Internal Server Error         | Generic failure                |
+| 503    | Service Unavailable           | Server down / retryable        |
+
+💡 Tip: Stick to this core set. Avoid rarely-used codes that confuse clients.
+
+---
+
+## GraphQL and Error Handling
+
+GraphQL returns 200 OK **even on errors**. Errors are placed inside the `errors` field, not reflected by HTTP status.
+
+This creates a dual world:
+- Network layer: always 200
+- App layer: success or failure inside response body
+
+Best practice is to include an `extensions.code` for all error types:
+
+```json
+{
+  "extensions": {
+    "code": "VALIDATION_FAILED",
+    "details": {...}
+  }
+}
+```
+
+Frameworks like Apollo, urql, and Relay help manage these errors with hooks and typed responses.
+
+---
+
+## Real-World Examples
+
+### Stripe
+
+Stripe includes:
+- Status code
+- Error type (`card_error`, `api_error`, `validation_error`)
+- Error code (`invalid_number`)
+- Field (`card[number]`)
+- Helpful message (`Your card number is invalid`)
+
+Their responses are **predictable, localized, and documented**.
+
+### GitHub
+
+GraphQL errors include:
+- Error path
+- Code
+- Message
+- Hints for invalid queries, schema errors, and auth failures
+
+### Shopify
+
+Includes `errors` key in responses with:
+- `message`
+- `code`
+- `field`
+- Optional debug headers
+
+---
+
+## Observability and Logging
+
+All API errors should be:
+- Logged with full context (user ID, headers, request ID)
+- Correlated with tracing spans
+- Reported via alerting if error rate spikes
+- Easily queryable by engineers and support teams
+
+Use structured logs (JSON) and group errors by `type`, not just message strings.
+
+---
+
+## Retryability and Safety
+
+Errors must signal whether they’re **retryable**:
+- ✅ 503, 429 → retry with backoff
+- ❌ 400, 401, 403 → don’t retry
+
+Include `Retry-After` headers when appropriate. And mark non-idempotent requests clearly to avoid double effects (e.g., duplicate orders).
+
+---
+
+## Developer UX Best Practices
+
+- Document every error code and example in your API docs
+- Use consistent field names: `code`, `message`, `field`, `details`
+- Avoid 500 for expected errors (e.g., user already exists)
+- Make messages user-friendly but detailed enough for devs
+- Localize errors when needed for end-user presentation
+
+---
+
+## Anti-Patterns
+
+- Using 200 for all responses (except GraphQL)
+- Generic `message: "Something went wrong"` errors
+- Failing silently with 204 when an error occurred
+- Mixing validation errors with generic API errors
+- Logging only message, not context
+
+---
+
+## Conclusion: Good Errors Are a Feature
+
+Error handling isn’t just a fail-safe — it’s a **feature**.
+
+Done right, it makes developers more productive, systems more observable, and users more confident. It’s not enough to catch and return. You have to **design** the failure modes as intentionally as the success paths.
+
+Errors happen. Let them teach you — and help your users recover.
+
+Design errors like you design APIs: with clarity, consistency, and care.

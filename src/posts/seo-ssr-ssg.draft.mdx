@@ -1,0 +1,158 @@
+---
+title: "SSR & SSG for SEO — Rendering for Discoverability"
+slug: "seo-ssr-ssg"
+category: "SEO"
+tags: ["seo", "ssr", "ssg", "pre-rendering", "next.js", "crawling"]
+summary: "Server-Side Rendering (SSR) and Static Site Generation (SSG) improve SEO by delivering content that search engines can crawl instantly. Learn when and how to use them for maximum discoverability."
+publishedAt: "2023-03-10"
+---
+
+# SSR & SSG for SEO — Rendering for Discoverability
+
+Search engines can index JavaScript-heavy SPAs — **but not always well**.
+
+Modern web apps often render content client-side. That means:
+- The initial HTML is nearly empty
+- Crawlers need to wait for JS to load and execute
+- Some pages might be **missed or misindexed**
+
+To solve this, we use **SSR** (Server-Side Rendering) or **SSG** (Static Site Generation) — both of which generate **HTML at build time or request time**, making your content immediately available for bots.
+
+In this article:
+- What SSR and SSG are
+- How they improve SEO
+- When to use one over the other
+- Framework examples (Next.js, Astro, Nuxt)
+- Common pitfalls and best practices
+
+---
+
+## Why Client-Side Rendering Hurts SEO
+
+- Googlebot renders JS, but slowly and inconsistently
+- Social media crawlers (Slack, LinkedIn) often **don’t execute JS**
+- Empty `<div id="root">` is a missed opportunity
+- Dynamic content might load too late to be indexed
+
+---
+
+## SSR vs SSG — What’s the Difference?
+
+| Feature      | SSR (Server Side Rendering)       | SSG (Static Site Generation)   |
+|--------------|-----------------------------------|--------------------------------|
+| When Rendered | On request (per user)             | At build time (once)           |
+| SEO Friendly | ✅ Yes                             | ✅ Yes                          |
+| Use Case     | Dynamic content, user-specific    | Blogs, docs, mostly-static     |
+| Example      | Product page with live price      | Marketing homepage             |
+
+---
+
+## Next.js Example
+
+### Static Site Generation (SSG)
+
+```tsx
+export async function getStaticProps() {
+  const posts = await fetchPosts();
+  return { props: { posts } };
+}
+```
+
+### Server-Side Rendering (SSR)
+
+```tsx
+export async function getServerSideProps(context) {
+  const data = await fetchData(context.params.id);
+  return { props: { data } };
+}
+```
+
+Both will pre-render the page to HTML, ready for search engines.
+
+---
+
+## Astro & SvelteKit
+
+### Astro
+
+- All pages are SSG by default
+- Great for content-heavy sites
+
+```ts
+export async function getStaticPaths() {
+  return [{ params: { slug: "seo-guide" } }];
+}
+```
+
+### SvelteKit
+
+- Choose SSR, SSG, or hybrid per route
+
+```ts
+export const prerender = true; // Enables SSG
+```
+
+---
+
+## Benefits for SEO
+
+- Immediate content in HTML
+- Faster **Time to First Byte (TTFB)**
+- Better support for crawlers and link previews
+- Higher Core Web Vitals scores (especially LCP)
+- Greater control over meta tags, structured data, canonical links
+
+---
+
+## Common Pitfalls
+
+- SSR pages without caching (slower, costly)
+- SSG builds that forget new pages (stale sitemap)
+- Improper `<head>` metadata (missing title/meta on SSR)
+- No loading states = broken UX for slow loads
+- Forgetting to update canonical URLs for dynamic pages
+
+---
+
+## Real-World Examples
+
+### Vercel.com
+
+- Next.js with hybrid SSR/SSG
+- Content pages are statically generated
+- Dashboard and auth are SSR
+
+### Notion.dev
+
+- Docs pre-rendered with Astro
+- Loads instantly with crawlable HTML
+
+---
+
+## Bonus: ISR (Incremental Static Regeneration)
+
+Available in Next.js and others:
+
+```tsx
+export async function getStaticProps() {
+  return {
+    props: {},
+    revalidate: 60 // Regenerate every 60 seconds
+  }
+}
+```
+
+Best of both worlds: static performance + dynamic freshness.
+
+---
+
+## Conclusion: Render for Robots
+
+SSR and SSG let you serve content the way search engines prefer: fast, clear, and complete.
+
+Don’t leave your pages blank and expect crawlers to figure it out.
+
+Render once. Reuse often. And make your content visible the moment the page loads.
+
+Because the best SEO isn’t magic — it’s **good engineering**.
+

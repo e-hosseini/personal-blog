@@ -3,14 +3,16 @@ import { Link, useStaticQuery, graphql } from 'gatsby';
 import { useLocation } from '@reach/router';
 import { Helmet } from 'react-helmet';
 import Footer from './Footer';
+import { StaticImage } from 'gatsby-plugin-image';
 
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
+  hideFooter?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
+const Layout: React.FC<LayoutProps> = ({ children, title, description, hideFooter = false }) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
@@ -33,12 +35,17 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
   const metaDescription = description || data.site.siteMetadata.description;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-lato">
       <Helmet>
         <html lang="en" />
         <title>{metaTitle}</title>
         <meta name="description" content={metaDescription} />
         <meta name="author" content="Ehsan Hosseini" />
+        
+        {/* Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
         
         {/* Favicon */}
         <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
@@ -68,24 +75,24 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
         />
         <link rel="canonical" href={data.site.siteMetadata.siteUrl} />
       </Helmet>
-      <header className="bg-white shadow-sm">
-        <nav className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-gray-900">
+      <header className="bg-white border-b border-gray-100">
+        <nav className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+          <Link to="/" className="text-xl font-montserrat font-medium text-gray-900">
             {data.site.siteMetadata.title}
           </Link>
           <div className="flex items-center space-x-4">
-            <Link to="/tags" className="text-gray-600 hover:text-gray-900">
-              Tags
+            <Link to="/tags" className="text-gray-600 hover:text-gray-900 text-sm">
+              Topics
             </Link>
             <a
               href="/rss.xml"
-              className="text-gray-600 hover:text-gray-900 flex items-center"
+              className="text-gray-600 hover:text-gray-900 flex items-center text-sm"
               target="_blank"
               rel="noopener noreferrer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-1"
+                className="h-4 w-4 mr-1"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -100,15 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
       <main className="flex-grow">
         {children}
       </main>
-      {isHomePage ? (
-        <div className="bg-white border-t border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <p className="text-gray-500 text-center">© {new Date().getFullYear()} Ehsan Hosseini. All rights reserved.</p>
-          </div>
-        </div>
-      ) : (
-        <Footer />
-      )}
+      {!hideFooter && <Footer />}
     </div>
   );
 };

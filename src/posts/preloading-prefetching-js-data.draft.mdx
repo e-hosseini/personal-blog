@@ -1,0 +1,167 @@
+---
+title: "Preloading and Prefetching — Speeding Up What Comes Next"
+slug: "preloading-prefetching-js-data"
+category: "Performance"
+tags: ["performance", "preloading", "prefetching", "http2", "react", "navigation"]
+summary: "Understand the difference between preloading and prefetching, and how they improve perceived speed. Learn to anticipate user intent and fetch resources before they’re needed using best practices and browser hints."
+publishedAt: "2022-10-07"
+---
+
+# Preloading and Prefetching — Speeding Up What Comes Next
+
+Speed isn’t just about rendering fast — it’s about **being ready before the user asks**. That’s the goal of **preloading** and **prefetching**.
+
+These two techniques allow you to **fetch critical resources in advance**, so when the user navigates, interacts, or scrolls, the content appears instantly.
+
+They’re especially powerful in SPAs (single-page apps), where the first page is fast, but transitions between views can stall due to JS or data fetches.
+
+In this article, we’ll cover:
+- The difference between preload and prefetch
+- When and how to use them
+- Practical examples with JavaScript, CSS, images, and data
+- React-specific strategies
+- Common pitfalls and best practices
+
+---
+
+## The Problem: First Clicks Are Fast, The Rest Lag
+
+You’ve optimized your initial load. Lighthouse scores are green. But the moment the user clicks “Dashboard,” there’s a pause — new JS chunks are loading.
+
+This is the **SPA trap**: great first paint, bad navigations.
+
+Solution? Load next steps **before they’re needed**.
+
+---
+
+## Preload vs Prefetch: What’s the Difference?
+
+| Feature   | Preload                         | Prefetch                          |
+|-----------|----------------------------------|-----------------------------------|
+| Priority  | High                             | Low                               |
+| When      | During page load                 | When idle                         |
+| Use Case  | Needed soon (e.g. font, CSS)     | Might be needed later (e.g. route)|
+| Tag       | `<link rel="preload">`           | `<link rel="prefetch">`           |
+
+Think of **preload** as "I'm going to need this immediately", and **prefetch** as "I might need this soon".
+
+---
+
+## Preloading Critical Resources
+
+### Fonts
+
+```html
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+```
+
+This ensures font is downloaded **before paint**, improving LCP.
+
+### JavaScript
+
+```html
+<link rel="preload" href="/static/js/dashboard.chunk.js" as="script">
+```
+
+Only preload if JS is **guaranteed to be used soon** (e.g., main view).
+
+---
+
+## Prefetching Anticipated Routes
+
+Use this to speed up future navigation.
+
+```html
+<link rel="prefetch" href="/static/js/settings.chunk.js" as="script">
+```
+
+Most modern frameworks like **Next.js**, **React Router**, or **Gatsby** prefetch on hover or idle.
+
+### React Router + Prefetch on Hover
+
+```tsx
+<Link to="/dashboard" onMouseEnter={() => import("./Dashboard")} />
+```
+
+Prefetches the JS chunk before the click.
+
+---
+
+## Data Prefetching
+
+Combine with SWR or React Query:
+
+```tsx
+const queryClient = useQueryClient();
+queryClient.prefetchQuery(["dashboardData"], fetchDashboard);
+```
+
+Ideal for authenticated dashboards, profile pages, etc.
+
+---
+
+## Framework-Level Support
+
+### Next.js
+
+- `next/link` prefetches pages on hover/idle
+- `getStaticProps` + ISR allow stale-while-revalidate caching
+
+### Remix
+
+- `loader()` fetches per route
+- Prefetches HTML/data chunks before navigation
+
+### Astro
+
+- Preloads critical scripts statically
+- Minimal runtime JS for pre-hydration
+
+---
+
+## Use Cases
+
+- Hovering on a menu → prefetch route
+- First scroll → preload next viewport images
+- Idle time after TTI → preload dashboard JS
+- Page load → preload auth/session tokens
+
+---
+
+## Real-World Examples
+
+### GitHub
+
+- Prefetches repository and issue data on hover
+- Loads PR diff assets before open
+
+### YouTube
+
+- Preloads next video assets
+- Prefetches thumbnails + metadata for recommended items
+
+### Amazon
+
+- Prefetches product JSON + carousel scripts based on scroll intent
+
+---
+
+## Anti-Patterns
+
+- Preloading too much → blocks critical path
+- Prefetching immediately → clogs bandwidth
+- Forgetting `as` attribute → hint ignored
+- Prefetching large resources on mobile (watch your data budget)
+
+---
+
+## Conclusion: Get There Before the User Does
+
+Preloading and prefetching let you **cheat latency**.
+
+They make your app feel fast — not by being faster, but by being **ready**.
+
+Done right, they blur the line between intention and delivery.
+
+Because the fastest request is one that never needed to wait.
+

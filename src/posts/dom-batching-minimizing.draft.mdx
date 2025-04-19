@@ -1,0 +1,181 @@
+---
+title: "DOM Batching & Minimizing — Less Changes, More Speed"
+slug: "dom-batching-minimizing"
+category: "Performance"
+tags: ["performance", "dom", "batching", "layout", "render", "react"]
+summary: "Every DOM change has a cost. Learn how to batch, minimize, and optimize DOM operations to reduce layout thrashing and boost frontend performance at scale."
+publishedAt: "2022-05-13"
+---
+
+# DOM Batching & Minimizing — Less Changes, More Speed
+
+The DOM is one of the slowest parts of the frontend stack.
+
+Every time you touch it — via JavaScript, React, animations, or even CSS — you may trigger:
+- Layout recalculations
+- Style invalidations
+- Paint
+- Compositing
+
+These steps are **expensive** and accumulate fast.
+
+That’s why performance-oriented developers focus on **DOM batching** and **minimizing DOM updates**.
+
+This guide explores:
+- Why DOM updates are costly
+- How browsers render
+- Techniques for batching, minimizing, and sequencing DOM work
+- React batching behavior
+- Common anti-patterns and real-world advice
+
+---
+
+## The Browser Rendering Pipeline
+
+1. JavaScript runs
+2. DOM is updated
+3. Styles recalculated
+4. Layout (geometry) calculated
+5. Paint → pixels drawn
+6. Composite → sent to GPU
+
+Each DOM change can trigger this process. Too many changes = low frame rate.
+
+---
+
+## What is DOM Batching?
+
+**Batching** means grouping multiple DOM changes together to:
+- Avoid layout thrashing
+- Prevent redundant calculations
+- Keep things in sync
+
+---
+
+## Example of Poor DOM Practice
+
+```js
+const el = document.getElementById("box");
+
+el.style.width = "100px";
+const height = el.offsetHeight; // layout forced
+el.style.backgroundColor = "red";
+```
+
+This causes **forced layout + style + paint** for each step.
+
+---
+
+## Better: Batch DOM Access & Mutations
+
+```js
+const el = document.getElementById("box");
+
+// READ phase
+const height = el.offsetHeight;
+
+// WRITE phase
+el.style.width = "100px";
+el.style.backgroundColor = "red";
+```
+
+Group all reads first, then all writes.
+
+This avoids layout thrashing.
+
+---
+
+## React DOM Batching
+
+React batches updates during event handlers and hooks.
+
+```tsx
+setCount(c => c + 1);
+setFlag(f => !f);
+```
+
+Both updates run in one render.
+
+In React 18+, batching is automatic even in `setTimeout` and promises.
+
+```tsx
+startTransition(() => {
+  setState("slow update");
+});
+```
+
+Use `useLayoutEffect` to **block** paint until your DOM updates are in place.
+
+---
+
+## Third-Party DOM Libraries
+
+Avoid direct DOM manipulation (e.g., jQuery, anime.js) inside React apps unless:
+- It’s fully isolated
+- Batched in animation frames
+- Doesn’t mutate React-managed DOM
+
+---
+
+## Scheduling with requestAnimationFrame
+
+Use `requestAnimationFrame()` to align visual changes:
+
+```js
+requestAnimationFrame(() => {
+  element.style.transform = "translateY(100px)";
+});
+```
+
+This syncs changes with browser paint.
+
+---
+
+## Real-World Examples
+
+### Google Sheets
+
+- Batches all cell updates into a single layer commit
+- Uses canvas where possible to avoid DOM altogether
+
+### Figma Web
+
+- Renders most visuals via WebGL
+- Batches React tree re-renders into a unified layer
+
+### Gmail
+
+- Uses `MutationObserver` to track and batch DOM changes from extensions
+
+---
+
+## Tools for Debugging
+
+- Chrome DevTools → Performance → Layout → "Layout Shift", "Style Recalc"
+- "Paint flashing" overlay
+- `PerformanceObserver` API
+- `why-did-you-render` for React components
+
+---
+
+## Anti-Patterns
+
+- DOM read → write → read → write (thrashing)
+- Triggering style/layout mid-transition
+- Using uncontrolled animations on DOM-intensive views
+- DOM mutation in `useEffect` without batching
+
+---
+
+## Conclusion: Touch the DOM Gently, Touch It Less
+
+Optimizing DOM interactions is less about speed and more about **discipline**.
+
+- Group changes
+- Schedule paints
+- Minimize reflows
+
+Your users will feel the difference — even if they can’t see the code.
+
+Because smoothness isn’t an accident. It’s the result of careful DOM stewardship.
+

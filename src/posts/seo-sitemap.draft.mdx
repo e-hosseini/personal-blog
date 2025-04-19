@@ -1,0 +1,183 @@
+---
+title: "Sitemaps — Guiding Crawlers Through Your Website"
+slug: "seo-sitemap"
+category: "SEO"
+tags: ["seo", "sitemap", "search engine", "xml", "robots"]
+summary: "Sitemaps are vital for SEO visibility. Learn how to generate, structure, and serve XML sitemaps to help search engines discover and index your site's pages effectively."
+publishedAt: "2023-03-03"
+---
+
+# Sitemaps — Guiding Crawlers Through Your Website
+
+Your site could have the best content on the web — but if search engines can't **discover** your pages, they won’t show up in results.
+
+A **sitemap** fixes that.
+
+Sitemaps tell search engines what pages exist, where they are, and how often they change. They’re a roadmap for bots like Googlebot, ensuring your content gets crawled and indexed.
+
+This article covers:
+- What sitemaps are and why they matter
+- XML and alternative formats
+- Dynamic vs static generation
+- How to submit and validate sitemaps
+- Real-world examples and tooling
+
+---
+
+## What Is a Sitemap?
+
+A **sitemap** is a file (usually XML) that lists the URLs on your site, along with metadata:
+- Last modified date
+- Change frequency
+- Priority (hint for importance)
+
+Placed at `/sitemap.xml`, it helps crawlers find **every reachable page**, even ones with few or no inbound links.
+
+---
+
+## Sitemap XML Format
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/</loc>
+    <lastmod>2023-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+```
+
+- `loc` = full URL
+- `lastmod` = last modified date (optional)
+- `changefreq` = hint for update frequency
+- `priority` = 0.0–1.0 (optional)
+
+---
+
+## When Do You Need a Sitemap?
+
+- Your site has **lots of pages**
+- You have **pages not linked** in the UI
+- You use **dynamic routing** (e.g., SPAs)
+- You want to ensure **crawling completeness**
+
+Even simple sites benefit — sitemaps are supported by Google, Bing, and others.
+
+---
+
+## Dynamic vs Static Sitemaps
+
+### Static
+
+Generated once via CLI or CMS plugin.
+
+Great for:
+- Blogs
+- Marketing sites
+
+### Dynamic
+
+Generated on request (e.g., `/api/sitemap.xml`).
+
+Great for:
+- Ecommerce
+- Apps with user-generated content
+- Headless CMS or Jamstack
+
+---
+
+## Sitemap Generation in Modern Frameworks
+
+### Next.js
+
+Use `next-sitemap`:
+
+```bash
+npm install next-sitemap
+```
+
+```js
+module.exports = {
+  siteUrl: 'https://example.com',
+  generateRobotsTxt: true,
+};
+```
+
+### Astro
+
+Use `@astrojs/sitemap` integration to auto-generate at build time.
+
+---
+
+## Robots.txt and Sitemaps
+
+Always include your sitemap in `robots.txt`:
+
+```
+User-agent: *
+Disallow:
+
+Sitemap: https://example.com/sitemap.xml
+```
+
+This ensures crawlers find your sitemap even without Search Console.
+
+---
+
+## Submit to Google Search Console
+
+1. Go to **Index → Sitemaps**
+2. Enter your sitemap URL
+3. Monitor status, errors, and discoverability
+
+This improves crawl priority and diagnostics.
+
+---
+
+## Real-World Examples
+
+### Amazon
+
+- Thousands of sitemap index files
+- Each product category has separate sitemap
+
+### MDN
+
+- Updated nightly
+- Includes language versions of each doc
+
+### Medium
+
+- Auto-updated sitemaps per user blog
+
+---
+
+## Anti-Patterns
+
+- Stale sitemap URLs (returning 404)
+- Missing new pages (e.g., blog posts)
+- Using wrong date format in `<lastmod>`
+- Forgetting to regenerate after content updates
+
+---
+
+## Tools
+
+- Screaming Frog SEO Spider
+- `next-sitemap`, `gatsby-plugin-sitemap`, `xmlbuilder2`
+- Google Search Console and Bing Webmaster Tools
+
+---
+
+## Conclusion: Be Crawler-Friendly
+
+A sitemap is your site’s handshake to the bots that power discovery.
+
+Help them out.
+
+List everything. Keep it current. Submit it properly.
+
+Because the only thing worse than bad SEO is **great content no one can find**.
+

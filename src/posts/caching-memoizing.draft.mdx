@@ -1,0 +1,179 @@
+---
+title: "Caching & Memoizing — Speed Without Repetition"
+slug: "caching-memoizing"
+category: "Performance"
+tags: ["performance", "caching", "memoization", "react", "frontend architecture"]
+summary: "Caching and memoizing are essential performance strategies. Learn when to reuse results, avoid re-renders, and intelligently store values in memory or storage to build faster, more efficient apps."
+publishedAt: "2022-03-25"
+---
+
+# Caching & Memoizing — Speed Without Repetition
+
+Every millisecond counts. And nothing wastes more milliseconds than **doing the same thing twice**.
+
+That’s what caching and memoizing are designed to stop.
+
+**Caching** stores the result of expensive work — network requests, calculations, component trees — so you can **reuse it** instead of recomputing.  
+**Memoization** is a type of caching scoped to **pure functions and render lifecycles**, preventing unnecessary recomputations or re-renders.
+
+In this guide, we’ll cover:
+- The difference between caching and memoizing
+- Practical patterns in JS and React
+- In-memory vs persistent cache
+- Server vs client caching
+- Real-world usage from React Query, Apollo, and SWR
+
+---
+
+## Why Cache?
+
+Caching improves:
+- Load times
+- Render speed
+- Bandwidth efficiency
+- User experience
+
+It reduces:
+- Duplicate fetches
+- Redundant renders
+- Recalculation of pure functions
+
+---
+
+## Memoizing in JavaScript
+
+```ts
+function expensiveOperation(x) {
+  console.log("Running...");
+  return x * x;
+}
+
+const memoized = (() => {
+  const cache = {};
+  return (x) => {
+    if (x in cache) return cache[x];
+    return (cache[x] = expensiveOperation(x));
+  };
+})();
+```
+
+Call `memoized(5)` multiple times — only the first run actually computes.
+
+---
+
+## Memoization in React
+
+### useMemo()
+
+```tsx
+const computedValue = useMemo(() => heavyCalculation(input), [input]);
+```
+
+Caches between renders. Recomputes only if `input` changes.
+
+---
+
+### useCallback()
+
+```tsx
+const handleClick = useCallback(() => doSomething(id), [id]);
+```
+
+Useful to **prevent child re-renders** when passing functions as props.
+
+---
+
+## React.memo()
+
+```tsx
+const ListItem = React.memo(({ item }) => {
+  return <div>{item.label}</div>;
+});
+```
+
+Skips re-renders if props haven't changed.
+
+Combine with `useMemo` and `useCallback` for deep optimization.
+
+---
+
+## Caching Network Data
+
+### SWR
+
+```tsx
+const { data } = useSWR("/api/user", fetcher);
+```
+
+- Caches results in memory
+- Supports TTL, stale-while-revalidate
+- Resumes from cache on remount or navigation
+
+### React Query
+
+```tsx
+useQuery(["posts"], fetchPosts, {
+  staleTime: 60 * 1000
+});
+```
+
+- In-memory caching
+- Cache-first strategies
+- Pagination-aware
+
+---
+
+## Persistent Caches
+
+- Store with IndexedDB, localStorage, or sessionStorage
+- Use for offline mode, resume state, last-used config
+- Combine with TTL to avoid stale data
+
+```ts
+localStorage.setItem("settings", JSON.stringify(data));
+```
+
+But don’t overuse — keep it small, scoped, and avoid stale state.
+
+---
+
+## Real-World Patterns
+
+### GitHub
+
+- Caches issue lists and PR data across tabs
+- Avoids re-fetching on same session
+
+### VSCode Web
+
+- Memoizes settings, file structure, recent activity
+- IndexedDB for persistence across reloads
+
+### Notion
+
+- Caches block trees for workspace views
+- Memoizes block rendering to prevent slow document trees
+
+---
+
+## Anti-Patterns
+
+- Memoizing non-pure functions (side effects = wrong results)
+- Over-memoizing (useMemo everywhere — wasteful)
+- Caching dynamic data without invalidation
+- Using `useMemo` to fix prop drilling that could be lifted
+
+---
+
+## Conclusion: If It’s Expensive, Cache It
+
+Fast apps aren’t just fast at first — they **stay fast** by remembering what they’ve already done.
+
+Memoizing avoids waste.
+
+Caching avoids wait.
+
+And smart engineering avoids **doing more than necessary**.
+
+So think once. Remember often. Render fast.
+

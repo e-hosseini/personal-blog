@@ -1,0 +1,202 @@
+---
+title: "Focus Management — Guiding Users, One Tab at a Time"
+slug: "focus-management"
+category: "Accessibility"
+tags: ["accessibility", "focus", "tab order", "keyboard", "a11y"]
+summary: "Focus management is essential for keyboard and assistive technology users. Learn how to control tab order, preserve context, and create seamless interactive experiences."
+publishedAt: "2022-06-17"
+---
+
+# Focus Management — Guiding Users, One Tab at a Time
+
+Focus is how users interact with your app — **especially when they can’t use a mouse**.
+
+If you don’t manage focus, your app can:
+- Confuse keyboard users
+- Lock screen reader users in dead ends
+- Break form flows
+- Create inaccessible modals, menus, and widgets
+
+In this article, you’ll learn:
+- What focus is and how it behaves
+- Tab order and focus indicators
+- Managing focus in React and SPAs
+- Creating focus traps and restoring focus context
+- Testing strategies and common pitfalls
+
+---
+
+## What Is Focus?
+
+In HTML, **focus** is the element that currently receives keyboard input.
+
+Only one element can be focused at a time.
+
+Focusable elements:
+- `<input>`, `<textarea>`, `<button>`
+- `<a href>`
+- `[tabindex="0"]`
+- Elements made programmatically focusable (`element.focus()`)
+
+---
+
+## The Tab Order
+
+Pressing `Tab` cycles forward.  
+`Shift + Tab` cycles backward.
+
+Order is determined by:
+1. Source order (top to bottom)
+2. `tabindex` (0 = normal, >0 = custom order, -1 = programmatic only)
+
+Avoid `tabindex > 0` — it overrides natural flow and breaks expectations.
+
+---
+
+## Focus Indicators
+
+Browsers provide **focus rings** by default (blue outline on Chrome, dotted line in Firefox).
+
+Do not remove them:
+
+```css
+button:focus {
+  outline: none; /* ❌ */
+}
+```
+
+Instead, customize them:
+
+```css
+button:focus-visible {
+  outline: 2px solid #00f;
+}
+```
+
+Use `:focus-visible` to only show outlines for keyboard users (not mouse clicks).
+
+---
+
+## Managing Focus in SPAs
+
+When routing changes or modals open, shift focus manually:
+
+```js
+useEffect(() => {
+  document.getElementById("page-title").focus();
+}, [location.pathname]);
+```
+
+Use `role="region"` and `tabindex="-1"` on main content regions to allow focus:
+
+```html
+<main id="main" tabindex="-1">...</main>
+```
+
+---
+
+## Focus Traps
+
+In dialogs or modals, keep focus **inside** the overlay.
+
+### Libraries:
+- `focus-trap` (npm)
+- `react-focus-lock`
+- `@reach/dialog`
+
+Manual trap example:
+
+```js
+const handleKeyDown = (e) => {
+  if (e.key === "Tab") {
+    // Check if focus is leaving modal bounds
+    // Cycle back to first/last element
+  }
+};
+```
+
+---
+
+## Restore Focus on Close
+
+Remember where the user was before opening a modal:
+
+```tsx
+const previouslyFocused = document.activeElement;
+
+openModal();
+
+modalClose(() => {
+  previouslyFocused.focus();
+});
+```
+
+This preserves context — a crucial UX practice for keyboard users.
+
+---
+
+## Skip Links
+
+Provide a “Skip to Content” link at the top of the page:
+
+```html
+<a href="#main-content" class="skip-link">Skip to main content</a>
+```
+
+Make it visible on focus:
+
+```css
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+.skip-link:focus {
+  left: 0;
+}
+```
+
+---
+
+## Real-World Examples
+
+### GOV.UK
+
+- Manages focus on every route change
+- Prominent skip links and heading focus management
+
+### GitHub
+
+- Focus returns to previous control when dropdowns, modals close
+- `aria-activedescendant` for combobox navigation
+
+---
+
+## Anti-Patterns
+
+- Removing focus outlines with no alternative
+- Opening modals without focus
+- Not returning focus after closing popups
+- Setting `tabindex="0"` everywhere
+- Making hidden elements focusable
+
+---
+
+## Testing Focus
+
+- Navigate with keyboard only
+- Use Axe DevTools or Lighthouse
+- Check visual focus indicator
+- Try screen reader navigation with NVDA or VoiceOver
+
+---
+
+## Conclusion: Accessibility Begins with Focus
+
+If users can’t focus on it, they can’t use it.
+
+Focus isn’t just a state — it’s a **conversation** between your interface and your user.
+
+So guide that conversation gently. Be clear, be predictable, and **keep them grounded**.
+
+Because accessible apps don’t just work — they **stay in focus**.
+

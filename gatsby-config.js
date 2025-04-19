@@ -1,7 +1,7 @@
 const siteMetadata = {
   title: `Ehsan Hosseini`,
-  siteUrl: `https://ehosseini.info`,
-  description: `Senior Software Engineer and Technical Advisor`,
+  siteUrl: `https://ehosseini.info/`,
+  description: `Tech Lead & Staff Software Engineer`,
   author: `Ehsan`,
 };
 
@@ -13,6 +13,20 @@ module.exports = {
     `gatsby-plugin-sharp`,
     `gatsby-transformer-sharp`,
     `gatsby-plugin-postcss`,
+    {
+      resolve: `gatsby-plugin-mdx`,
+      options: {
+        extensions: [`.mdx`, `.md`],
+        gatsbyRemarkPlugins: [
+          {
+            resolve: `gatsby-remark-images`,
+            options: {
+              maxWidth: 1200,
+            },
+          },
+        ],
+      },
+    },
     {
       resolve: `gatsby-plugin-feed`,
       options: {
@@ -113,35 +127,10 @@ module.exports = {
               }
             `,
             output: `/rss/${tag}.xml`,
-            title: `Ehsan Hosseini's ${tag} Articles`,
+            title: `Ehsan Hosseini's Blog - ${tag}`,
             match: `^/blog/${tag}/`,
             link: `https://ehosseini.info/blog/${tag}`,
-          }))
-        ]
-      }
-    },
-    {
-      resolve: `gatsby-plugin-mdx`,
-      options: {
-        extensions: [`.mdx`, `.md`],
-        mdxOptions: {
-          remarkPlugins: [],
-          rehypePlugins: [],
-        },
-        gatsbyRemarkPlugins: [
-          {
-            resolve: `gatsby-remark-images`,
-            options: {
-              maxWidth: 1200,
-              linkImagesToOriginal: false,
-            },
-          },
-          {
-            resolve: `gatsby-remark-copy-linked-files`,
-            options: {
-              destinationDir: `static`,
-            },
-          },
+          })),
         ],
       },
     },
@@ -149,8 +138,7 @@ module.exports = {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `posts`,
-        path: `${__dirname}/src/posts/`,
-        ignore: [`**/\.*`], // ignore files starting with a dot
+        path: `${__dirname}/src/posts`,
       },
     },
     {

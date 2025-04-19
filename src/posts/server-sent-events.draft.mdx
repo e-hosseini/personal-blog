@@ -1,0 +1,189 @@
+---
+title: "Server-Sent Events (SSE) — One-Way Push, Simplified"
+slug: "server-sent-events"
+category: "Real-time updates"
+tags: ["sse", "server-sent events", "real-time", "http", "streaming"]
+summary: "A deep dive into Server-Sent Events (SSE) — the simplest way to push real-time data from server to browser over HTTP. Explore how it works, when to use it, and how it compares to WebSockets and polling."
+publishedAt: "2023-03-24"
+---
+
+# Server-Sent Events (SSE) — One-Way Push, Simplified
+
+In the universe of real-time communication, **Server-Sent Events (SSE)** often go under the radar. But for many use cases, they’re the **perfect fit**: lightweight, reliable, HTTP-native, and ideal for sending a continuous stream of updates from the server to the browser.
+
+Unlike WebSockets, which are bidirectional, SSE is a **one-way push mechanism** over HTTP. The server streams events to the client — think: notifications, logs, dashboards, live counters, or telemetry — using a persistent connection and a simple event protocol.
+
+SSE combines the best of both worlds: real-time feel, with all the simplicity of HTTP.
+
+---
+
+## What is SSE?
+
+SSE is built into the browser via the `EventSource` API. It’s a native feature of HTML5, meaning no polyfills, no custom protocols, and no weird client SDKs.
+
+```js
+const source = new EventSource("/api/stream");
+
+source.onmessage = (event) => {
+  console.log("New message:", event.data);
+};
+```
+
+The server keeps the connection open and **streams text-based events** formatted like:
+
+```http
+data: {"message": "Hello, world!"}
+
+
+
+```
+
+Each event can include:
+- `event:` custom event name
+- `id:` identifier for reconnection
+- `retry:` reconnect delay (ms)
+
+---
+
+## Why Use SSE?
+
+SSE is great when:
+- You need **real-time delivery** from server to browser
+- Only the server sends data (e.g., alerts, counters)
+- You want **built-in reconnect** and **auto handling**
+- You need HTTP/1.1 compatibility (no custom upgrade)
+
+Compared to WebSockets:
+- Easier to set up
+- Works over HTTP/2
+- Plays well with proxies, firewalls, load balancers
+
+---
+
+## Example: Basic SSE Server (Node.js)
+
+```js
+app.get("/api/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  setInterval(() => {
+    res.write(`data: ${JSON.stringify({ timestamp: Date.now() })}\n\n`);
+  }, 1000);
+});
+```
+
+The connection stays open — and the browser keeps receiving `onmessage` events every second.
+
+---
+
+## Use Cases for SSE
+
+### Notifications
+
+Push real-time notifications to the UI without polling. SSE ensures that messages are delivered as soon as they’re emitted.
+
+### Live Counters / Dashboards
+
+Ideal for metrics, analytics, and dashboards that update frequently — SSE provides continuous streams with no overhead.
+
+### CI/CD Logs
+
+Streaming logs from a build pipeline or deployment job is trivial with SSE. Events arrive as soon as they’re flushed server-side.
+
+---
+
+## Comparison: SSE vs WebSockets
+
+| Feature               | SSE               | WebSocket           |
+|------------------------|-------------------|----------------------|
+| Direction              | Server → Client   | Bi-directional       |
+| Browser support        | Native (EventSource) | Native + JS API    |
+| Transport              | HTTP              | Custom protocol      |
+| Reconnects             | Auto              | Manual               |
+| Simplicity             | ✅ Easy            | ⚠️ More complex       |
+| Proxies/CDN friendly   | ✅ Yes             | ⚠️ Can break          |
+| Use case               | Notifications, logs | Chats, games         |
+
+---
+
+## Limitations of SSE
+
+- **One-way only**: you can’t send data from client to server over the same channel
+- **Not supported in IE or some older browsers**
+- **Not ideal for binary data** (text only)
+- Some CDNs and proxies might buffer output unless `X-Accel-Buffering` or `flush()` is used
+
+---
+
+## Reconnection and Reliability
+
+SSE has built-in recovery logic:
+- Clients auto-reconnect on disconnect
+- You can use `id:` to mark the last message
+- Server receives `Last-Event-ID` header to resume stream
+
+```http
+id: 172456
+data: {"message": "Hello again"}
+```
+
+Use this for:
+- Recovering from disconnection
+- Resuming missed messages
+- Implementing "at-least-once" delivery guarantees
+
+---
+
+## Real-World Usage
+
+### Netlify / Vercel
+
+Uses SSE to stream logs and deployment events to developer dashboards.
+
+### GitHub Actions
+
+SSE (or WebSockets depending on browser) used to stream CI logs live to job viewer.
+
+### Firebase Emulator
+
+Uses SSE for local data streaming in the dev console, making mock data updates visible instantly.
+
+---
+
+## Server Considerations
+
+- Set `Content-Type: text/event-stream`
+- Flush headers immediately
+- Disable buffering on reverse proxies (e.g., `X-Accel-Buffering: no`)
+- Stream heartbeats every 20–30s to avoid idle timeout
+
+Example in Express:
+
+```js
+res.write(":
+
+"); // heartbeat
+```
+
+---
+
+## Anti-Patterns
+
+- Using SSE for high-throughput chat (use WebSocket)
+- Forgetting to reconnect manually in legacy fallback
+- Not closing connections on client inactivity
+- Streaming huge payloads (SSE is better for small messages)
+
+---
+
+## Conclusion: Simplicity That Streams
+
+SSE is the **cleanest, lowest-friction** way to push real-time data from server to client — no upgrades, no custom headers, just plain HTTP.
+
+It won’t replace WebSockets for everything. But for notifications, metrics, logs, and single-direction updates, it’s a brilliant tool.
+
+Don’t overengineer real-time.
+
+Sometimes, a stream of text is all you need.

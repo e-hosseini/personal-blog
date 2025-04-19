@@ -1,0 +1,198 @@
+---
+title: "Timeouts — Knowing When to Give Up on the Network"
+slug: "timeout"
+category: "Networking Techniques"
+tags: ["timeout", "networking", "http", "error handling", "resilience"]
+summary: "Explore the importance of timeout strategies in frontend networking. Learn when and how to cancel slow requests, show errors early, and build more resilient, responsive web applications."
+publishedAt: "2023-04-28"
+---
+
+# Timeouts — Knowing When to Give Up on the Network
+
+One of the hardest lessons in frontend engineering: **not all network requests will complete**. Some get stuck. Some are delayed. Some are just lost in the void.
+
+That’s why timeouts matter.
+
+A **timeout** sets a deadline for a request to complete. If it doesn’t finish in time, it’s cancelled or treated as failed. This simple pattern protects your app from hanging indefinitely — and gives your users timely feedback when something goes wrong.
+
+In this article, we’ll cover:
+- Why timeouts are essential
+- How to implement them in fetch, Axios, and beyond
+- When to set deadlines (and how long they should be)
+- How timeouts improve resilience, UX, and observability
+- Real-world timeout behavior from apps like Gmail, Slack, and more
+
+---
+
+## What Is a Timeout?
+
+A timeout is a **maximum wait time** for a network operation to succeed. If the operation takes longer, it’s aborted.
+
+Reasons a request might hang:
+- Server is overloaded or unresponsive
+- Network conditions are degraded
+- DNS or TLS negotiation fails
+- Middleware (e.g., proxies, firewalls) interfere
+
+Without a timeout, the request may **never resolve** — leading to stuck UIs, memory leaks, and poor UX.
+
+---
+
+## How to Implement Timeouts (Fetch)
+
+Native `fetch()` does not include a built-in timeout — but you can use `AbortController`:
+
+```ts
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 5000);
+
+fetch("/api/data", { signal: controller.signal })
+  .then(res => res.json())
+  .catch(err => {
+    if (err.name === "AbortError") {
+      console.log("Request timed out");
+    }
+  })
+  .finally(() => clearTimeout(timeout));
+```
+
+This cancels the request if it takes more than 5 seconds.
+
+---
+
+## Axios Timeout Support
+
+Axios has built-in timeout configuration:
+
+```ts
+axios.get("/api/data", { timeout: 5000 })
+  .then(handleResponse)
+  .catch((error) => {
+    if (error.code === "ECONNABORTED") {
+      console.error("Request timed out");
+    }
+  });
+```
+
+This works cross-platform and handles error typing automatically.
+
+---
+
+## When Should You Set Timeouts?
+
+Timeouts should be:
+- Short for **UX-critical** tasks (e.g., button clicks, saves) — 3–5s
+- Medium for **content fetching** (e.g., loading dashboards) — 5–10s
+- Longer for **background syncing** or retries — 15–30s
+
+Always balance:
+- UX expectations
+- Network variability
+- Backend reliability
+- Mobile vs desktop users
+
+---
+
+## UI Patterns for Timeout Feedback
+
+- Use **spinners** with fallback text ("Taking longer than expected...")
+- Auto-dismiss or retry on timeout
+- Surface actionable errors ("Couldn’t connect — Try again")
+- Use skeleton loaders to maintain layout continuity
+
+---
+
+## Timeout with Promises
+
+You can create a timeout wrapper around any async function:
+
+```ts
+function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
+withTimeout(fetch("/api/data"), 5000)
+  .then(res => res.json())
+  .catch(console.error);
+```
+
+This approach works with any async operation, not just network.
+
+---
+
+## Timeout and Retry Together
+
+Combine timeouts with retries for resilience:
+
+```ts
+async function fetchWithRetry(url, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await withTimeout(fetch(url), 5000);
+    } catch (e) {
+      if (i === attempts - 1) throw e;
+    }
+  }
+}
+```
+
+This ensures you give the request a fair chance — but don’t hang forever.
+
+---
+
+## Real-World Behavior
+
+### Gmail
+
+- Uses timeouts aggressively for inbox sync
+- Prompts retry dialogs if fetch stalls
+
+### Slack
+
+- Marks channels as “disconnected” if request stalls > 5s
+- Background retries to reconnect
+
+### Facebook
+
+- “We’re having trouble loading this right now” = timeout fallback
+- Data fetches often retried silently
+
+---
+
+## Observability and Debugging
+
+Track timeout stats:
+- % of total requests that time out
+- Avg time to timeout
+- Affected endpoints
+- Retry success rate
+
+Use logs + error reporting (Sentry, DataDog) to alert on timeout spikes — often a backend issue or ISP degradation.
+
+---
+
+## Anti-Patterns
+
+- No timeout on critical network ops (e.g. auth, save)
+- Blindly retrying on timeout without exponential backoff
+- Showing generic error messages for timeouts
+- Canceling too aggressively on flaky mobile networks
+- Letting stale timeouts override new requests (race condition)
+
+---
+
+## Conclusion: Better to Fail Fast Than Hang Forever
+
+Timeouts make your app feel **intentional**. They say: “We expected this to work — and it didn’t — so we’ll move on.”
+
+They protect your UX, save your compute, and help debug real-world issues.
+
+So don’t just hope your fetches return.
+
+Tell them **when to give up**.
+
+And give your users something better than silence.
+

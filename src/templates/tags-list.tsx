@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, graphql } from 'gatsby';
 import Layout from '../components/layout';
+import Topic from '../components/Topic';
 
-interface TagsListTemplateProps {
+interface TopicsListTemplateProps {
   data: {
     allMdx: {
       group: Array<{
@@ -19,8 +20,8 @@ interface TagsListTemplateProps {
   };
 }
 
-const TagsListTemplate: React.FC<TagsListTemplateProps> = ({ data, pageContext }) => {
-  const { group: tags } = data.allMdx;
+const TopicsListTemplate: React.FC<TopicsListTemplateProps> = ({ data, pageContext }) => {
+  const { group: topics } = data.allMdx;
   const { currentPage, numPages } = pageContext;
 
   const isFirst = currentPage === 1;
@@ -28,30 +29,30 @@ const TagsListTemplate: React.FC<TagsListTemplateProps> = ({ data, pageContext }
   const prevPage = currentPage - 1 === 1 ? '/tags' : `/tags/page/${currentPage - 1}`;
   const nextPage = `/tags/page/${currentPage + 1}`;
 
-  // Function to normalize tag for URL
-  const normalizeTag = (tag: string) => tag.toLowerCase().replace(/\s+/g, '-');
+  // Function to normalize topic for URL
+  const normalizeTopic = (topic: string) => topic.toLowerCase().replace(/\s+/g, '-');
 
   return (
     <Layout
-      title={`Tags${currentPage > 1 ? ` - Page ${currentPage}` : ''}`}
-      description="Browse all tags and categories"
+      title={`Topics${currentPage > 1 ? ` - Page ${currentPage}` : ''}`}
+      description="Browse all topics"
     >
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8">Tags</h1>
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-montserrat font-medium mb-8">Topics</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tags.map((tag) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {topics.map((topic) => (
             <Link
-              key={tag.fieldValue}
-              to={`/tags/${normalizeTag(tag.fieldValue)}`}
+              key={topic.fieldValue}
+              to={`/tags/${normalizeTopic(topic.fieldValue)}`}
               className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow"
             >
-              <h2 className="text-xl font-bold text-gray-900">
-                {tag.fieldValue}
-              </h2>
-              <p className="text-gray-600 mt-2">
-                {tag.totalCount} {tag.totalCount === 1 ? 'post' : 'posts'}
-              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-medium text-gray-900">{topic.fieldValue}</span>
+                <span className="text-sm text-gray-500">
+                  {topic.totalCount} {topic.totalCount === 1 ? 'post' : 'posts'}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
@@ -99,7 +100,7 @@ const TagsListTemplate: React.FC<TagsListTemplateProps> = ({ data, pageContext }
 };
 
 export const query = graphql`
-  query TagsListQuery($skip: Int!, $limit: Int!) {
+  query TopicsListQuery($skip: Int!, $limit: Int!) {
     allMdx {
       group(field: { frontmatter: { tags: SELECT } }, limit: $limit, skip: $skip) {
         fieldValue
@@ -109,4 +110,4 @@ export const query = graphql`
   }
 `;
 
-export default TagsListTemplate; 
+export default TopicsListTemplate; 

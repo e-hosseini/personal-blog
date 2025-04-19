@@ -46,16 +46,14 @@ const Footer: React.FC = () => {
                 </a>
               </div>
             </div>
-            <p className="text-xl leading-relaxed text-gray-700 mb-8 mt-12">
-              Senior Software Engineer and Technical Advisor with 15+ years of experience in analysis, 
-              design, development, testing, and implementation of internet-based applications. 
-              As a team lead, consultant, and solution provider, I help businesses overcome technical 
-              challenges and create innovative solutions.
-            </p>
             <div className="mt-12">
-              <h3 className="text-2xl font-light mb-4">Ehsan Hosseini</h3>
-              <p className="text-xl text-gray-700">me [at] ehosseini [dot] info</p>
+              <h3 className="text-xl font-light mb-4">Ehsan Hosseini</h3>
+              <p className="text-md font-light text-gray-700">me [at] ehosseini [dot] info</p>
             </div>
+            <p className="text-md font-light leading-relaxed text-gray-700 mb-8">
+              Staff Software Engineer and Tech Lead with a track record of leading high-performing engineering teams and delivering scalable, end-to-end technology solutions. With experience across web, mobile, and backend systems, I help companies make smart architectural decisions, scale efficiently, and align technical strategy with business goals.
+            </p>
+            
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-gray-100">

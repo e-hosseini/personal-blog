@@ -1,58 +1,60 @@
 ---
-title: "DOM Batching & Minimizing — Less Changes, More Speed"
-slug: "dom-batching-minimizing"
+title: "Mastering DOM Operations: Batching & Minimizing for Enhanced Performance"
+slug: "mastering-dom-operations-batching-minimizing"
 category: "Performance"
-tags: ["performance", "dom", "batching", "layout", "render", "react"]
-summary: "Every DOM change has a cost. Learn how to batch, minimize, and optimize DOM operations to reduce layout thrashing and boost frontend performance at scale."
+tags: ["Performance", "DOM", "Batching", "Layout", "Render", "React"]
+summary: "Master the art of reducing layout thrashing and boosting frontend performance by learning how to batch, minimize, and optimize DOM operations effectively."
 publishedAt: "2022-05-13"
 ---
 
-# DOM Batching & Minimizing — Less Changes, More Speed
+# Mastering DOM Operations: Batching & Minimizing for Enhanced Performance
 
-The DOM is one of the slowest parts of the frontend stack.
+The Document Object Model (DOM) forms the heart of any web application. However, it is often the slowest aspect of the frontend stack, resulting in performance bottlenecks.
 
-Every time you touch it — via JavaScript, React, animations, or even CSS — you may trigger:
+Each interaction with the DOM — through JavaScript, React, animations, or CSS — potentially triggers a series of expensive operations such as:
 - Layout recalculations
 - Style invalidations
-- Paint
+- Paint operations
 - Compositing
 
-These steps are **expensive** and accumulate fast.
+These steps, while necessary, are computationally intensive and can rapidly degrade performance when they accumulate. Therefore, seasoned developers who prioritize performance often aim to optimize DOM access by focusing on **DOM batching** and **minimizing DOM updates**.
 
-That’s why performance-oriented developers focus on **DOM batching** and **minimizing DOM updates**.
-
-This guide explores:
-- Why DOM updates are costly
-- How browsers render
-- Techniques for batching, minimizing, and sequencing DOM work
-- React batching behavior
-- Common anti-patterns and real-world advice
+In this comprehensive guide, we'll delve into:
+- The reasons behind the high cost of DOM updates
+- The internals of browser rendering
+- Effective techniques for batching, minimizing, and sequencing DOM operations
+- The batching behavior in React
+- Common anti-patterns and practical advice for real-world scenarios
 
 ---
 
-## The Browser Rendering Pipeline
+## Unraveling the Browser Rendering Pipeline
 
-1. JavaScript runs
-2. DOM is updated
-3. Styles recalculated
-4. Layout (geometry) calculated
-5. Paint → pixels drawn
-6. Composite → sent to GPU
+Before we delve into optimization techniques, it's essential to understand the sequence of events that occur when a change is made to the DOM. Here is the typical sequence of steps that a browser follows:
 
-Each DOM change can trigger this process. Too many changes = low frame rate.
+1. Execution of JavaScript code
+2. DOM update based on JavaScript results
+3. Recalculation of styles based on the updated DOM
+4. Calculation of layout (geometry) based on the new styles
+5. Paint operation to draw the pixels on the screen
+6. Compositing operation to send the painted pixels to the GPU for display.
 
----
-
-## What is DOM Batching?
-
-**Batching** means grouping multiple DOM changes together to:
-- Avoid layout thrashing
-- Prevent redundant calculations
-- Keep things in sync
+Each modification to the DOM has the potential to trigger this entire sequence. If too many changes occur in quick succession, the browser may struggle to maintain a smooth frame rate, leading to choppy animations and interactivity.
 
 ---
 
-## Example of Poor DOM Practice
+## Understanding DOM Batching
+
+**Batching** is a technique that involves grouping multiple DOM changes together to:
+- Prevent layout thrashing by avoiding unnecessary recalculations
+- Avoid redundant calculations by reusing computed values
+- Maintain synchronicity in DOM updates
+
+---
+
+## An Illustration of Suboptimal DOM Practice
+
+Consider the following JavaScript code:
 
 ```js
 const el = document.getElementById("box");
@@ -62,11 +64,13 @@ const height = el.offsetHeight; // layout forced
 el.style.backgroundColor = "red";
 ```
 
-This causes **forced layout + style + paint** for each step.
+In this example, each change to the `el` object forces a layout recalculation, style invalidation, and paint operation. This is an inefficient use of resources and can lead to performance issues.
 
 ---
 
-## Better: Batch DOM Access & Mutations
+## A More Efficient Approach: Batch DOM Access & Mutations
+
+Instead of interspersing reads and writes, a more effective approach is to group all reads first, followed by all writes. This approach allows the browser to optimize layout calculations, leading to better performance.
 
 ```js
 const el = document.getElementById("box");
@@ -79,24 +83,20 @@ el.style.width = "100px";
 el.style.backgroundColor = "red";
 ```
 
-Group all reads first, then all writes.
-
-This avoids layout thrashing.
+By batching reads and writes, we prevent the browser from undergoing layout thrashing, thereby improving performance.
 
 ---
 
-## React DOM Batching
+## DOM Batching in React
 
-React batches updates during event handlers and hooks.
+React employs an effective batching mechanism during the execution of event handlers and hooks.
 
 ```tsx
 setCount(c => c + 1);
 setFlag(f => !f);
 ```
 
-Both updates run in one render.
-
-In React 18+, batching is automatic even in `setTimeout` and promises.
+In this example, both state updates are batched together and executed during a single render. As of React version 18 and onwards, this batching is automatically applied even within asynchronous operations like `setTimeout` and promises.
 
 ```tsx
 startTransition(() => {
@@ -104,22 +104,22 @@ startTransition(() => {
 });
 ```
 
-Use `useLayoutEffect` to **block** paint until your DOM updates are in place.
+The `useLayoutEffect` hook can be used to **block** paint operations until all necessary DOM updates have been applied. This ensures that the browser only paints the final state of the DOM, thereby reducing unnecessary paint operations.
 
 ---
 
-## Third-Party DOM Libraries
+## Handling Third-Party DOM Libraries
 
-Avoid direct DOM manipulation (e.g., jQuery, anime.js) inside React apps unless:
-- It’s fully isolated
-- Batched in animation frames
-- Doesn’t mutate React-managed DOM
+Manipulating the DOM directly using third-party libraries (like jQuery or anime.js) within a React app is generally discouraged unless:
+- The manipulation is completely isolated from the rest of the app
+- The updates are batched within animation frames
+- The DOM elements being manipulated are not managed by React
 
 ---
 
 ## Scheduling with requestAnimationFrame
 
-Use `requestAnimationFrame()` to align visual changes:
+The `requestAnimationFrame()` method allows developers to schedule visual changes in alignment with the browser's paint operations.
 
 ```js
 requestAnimationFrame(() => {
@@ -127,30 +127,31 @@ requestAnimationFrame(() => {
 });
 ```
 
-This syncs changes with browser paint.
+By using this method, changes to the DOM are synchronized with the browser's paint operations, reducing unnecessary paints.
 
 ---
 
 ## Real-World Examples
 
+Several high-performance web applications employ these techniques to great effect:
+
 ### Google Sheets
 
-- Batches all cell updates into a single layer commit
-- Uses canvas where possible to avoid DOM altogether
+Google Sheets cleverly batches all cell updates into a single layer commit, significantly reducing the number of layout recalculations. Where possible, it uses a canvas to avoid interacting with the DOM altogether.
 
 ### Figma Web
 
-- Renders most visuals via WebGL
-- Batches React tree re-renders into a unified layer
+Figma's web application renders most of its visuals via WebGL, bypassing the DOM entirely. It also batches React tree re-renders into a unified layer, reducing layout recalculations.
 
 ### Gmail
 
-- Uses `MutationObserver` to track and batch DOM changes from extensions
+Gmail utilizes the `MutationObserver` API to monitor and batch DOM changes resulting from extensions. This ensures that the DOM is updated efficiently, even when several extensions are active.
 
 ---
 
 ## Tools for Debugging
 
+The following tools can assist in identifying and resolving performance issues related to DOM interactions:
 - Chrome DevTools → Performance → Layout → "Layout Shift", "Style Recalc"
 - "Paint flashing" overlay
 - `PerformanceObserver` API
@@ -158,24 +159,19 @@ This syncs changes with browser paint.
 
 ---
 
-## Anti-Patterns
+## Common Anti-Patterns
 
-- DOM read → write → read → write (thrashing)
-- Triggering style/layout mid-transition
-- Using uncontrolled animations on DOM-intensive views
-- DOM mutation in `useEffect` without batching
+Several common anti-patterns can hinder performance and should be avoided:
+
+- Alternating between DOM read and write operations (causes thrashing)
+- Triggering style/layout recalculations during transitions
+- Using uncontrolled animations on views with many DOM elements
+- Mutating the DOM in `useEffect` without batching
 
 ---
 
-## Conclusion: Touch the DOM Gently, Touch It Less
+## Conclusion: Optimize Your Interactions with the DOM
 
-Optimizing DOM interactions is less about speed and more about **discipline**.
+Optimizing your interactions with the DOM is less about speed and more about **discipline**. By adopting a structured approach that groups changes, schedules paint operations, and minimizes reflows, you can significantly enhance the user experience.
 
-- Group changes
-- Schedule paints
-- Minimize reflows
-
-Your users will feel the difference — even if they can’t see the code.
-
-Because smoothness isn’t an accident. It’s the result of careful DOM stewardship.
-
+Even though users may not be able to see the underlying code, they will undoubtedly feel the difference in the form of smoother interactivity and quicker responses. After all, a smooth user experience isn't an accident; it's the result of meticulous DOM stewardship.

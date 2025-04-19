@@ -1,58 +1,36 @@
 ---
-title: "WAI-ARIA Roles, States & Properties — Making Semantic HTML Smarter"
-slug: "wai-aria-roles-states-properties"
-category: "Accessibility"
+title: "Deep Dive into WAI-ARIA: Roles, States, and Properties"
+slug: "advanced-wai-aria"
+category: "Web Accessibility"
 tags: ["accessibility", "aria", "semantic html", "a11y", "screen readers"]
-summary: "Learn how ARIA roles, states, and properties enhance HTML semantics and make dynamic UIs accessible. Understand how to use them correctly—and when not to use them at all."
+summary: "Explore the advanced usage of ARIA roles, states, and properties to enhance HTML semantics and make dynamic web applications more accessible. Understand how to apply these concepts with precision, and the pitfalls to avoid."
 publishedAt: "2023-05-19"
 ---
 
-# WAI-ARIA Roles, States & Properties — Making Semantic HTML Smarter
+# Deep Dive into WAI-ARIA: Roles, States, and Properties
 
-HTML alone isn’t always enough.
+In the era of dynamic web applications, HTML must often be extended beyond its native capabilities. Web developers frequently design interactive components like tabs, modals, carousels, and live updates—features that are not natively supported in semantic HTML. This gap is bridged by WAI-ARIA, an acronym for Web Accessibility Initiative - Accessible Rich Internet Applications.
 
-Modern web apps use tabs, modals, carousels, live updates — patterns that **aren’t natively supported** in semantic HTML. That’s where **WAI-ARIA** comes in.
+ARIA is a set of attributes that can enhance HTML by adding:
+- Meaning through `role`
+- Status with `aria-*`
+- Interactivity via `aria-expanded`, `aria-checked`, and similar attributes
 
-ARIA stands for **Accessible Rich Internet Applications**, and it’s a set of attributes that add:
-- Meaning (`role`)
-- Status (`aria-*`)
-- Interactivity (`aria-expanded`, `aria-checked`, etc.)
-
-These attributes allow **screen readers** and other assistive tech to understand and announce complex UIs.
-
-In this guide, we’ll explore:
-- The purpose of ARIA
-- When and how to use roles, states, and properties
-- Examples of ARIA-powered components
-- Common mistakes (and how to avoid them)
+These attributes empower assistive technologies like screen readers to comprehend and announce complex user interfaces. However, they should be used judiciously and correctly. This in-depth guide provides a comprehensive understanding of when and how to use ARIA roles, states, and properties, supported by practical examples and highlighting common mistakes.
 
 ---
 
-## The First Rule of ARIA
+## The Fundamental Rule of ARIA
 
-> **Don’t use ARIA if you can use native HTML.**
-
-HTML5 already provides semantic elements:
-- Use `<button>`, not `div role="button"`
-- Use `<nav>`, not `div role="navigation"`
-- Use `<h1>` to `<h6>`, not `div role="heading"`
-
-ARIA should **enhance**, not replace, semantic HTML.
+The first rule of ARIA is: **Don't use ARIA if you can use native HTML**. HTML5 already offers a wide array of semantic elements. For instance, instead of using `div role="button"`, use the `<button>` tag. Similarly, prefer `<nav>` over `div role="navigation"` and `<h1>` to `<h6>` in place of `div role="heading"`. ARIA should enhance, not replace, semantic HTML.
 
 ---
 
 ## ARIA Roles
 
-ARIA roles describe the **purpose** of an element.
+ARIA roles provide a description of the **purpose** of an element. Examples include `role="button"`, `role="dialog"`, `role="tabpanel"`, `role="alert"`, and `role="navigation"`. These roles help assistive technologies understand the function of an element within the application's context.
 
-Examples:
-- `role="button"`
-- `role="dialog"`
-- `role="tabpanel"`
-- `role="alert"`
-- `role="navigation"`
-
-### Tab Example:
+Consider this example of a tab component:
 
 ```html
 <div role="tablist">
@@ -62,32 +40,30 @@ Examples:
 <div role="tabpanel">Tab content here</div>
 ```
 
+In the above example, the ARIA roles and attributes define a tab structure. The `role="tablist"` signifies a collection of tabs encapsulated within a div. Each tab is represented by a button with `role="tab"`. The `aria-selected` attribute indicates the current active tab. Lastly, `role="tabpanel"` represents the container for the tab content.
+
 ---
 
 ## ARIA States
 
-ARIA states describe **current conditions** like:
-- `aria-checked` (checkbox)
-- `aria-expanded` (menus, accordions)
-- `aria-disabled` (non-interactive states)
+ARIA states describe the **current conditions** of elements. Examples include `aria-checked` for checkboxes, `aria-expanded` for menus or accordions, and `aria-disabled` for non-interactive states.
+
+Consider the following example:
 
 ```html
 <button aria-expanded="true" aria-controls="menu">Menu</button>
 <ul id="menu" hidden>...</ul>
 ```
 
-Update states **dynamically** via JS when interaction changes.
+In this example, `aria-expanded` represents the state of the menu—whether it is open or closed. The `aria-controls` attribute associates the button with the element it controls, in this case, the 'menu' element. These states must be updated dynamically via JavaScript when the user interacts with the components.
 
 ---
 
 ## ARIA Properties
 
-ARIA properties describe **relationships and descriptions**:
-- `aria-labelledby`
-- `aria-describedby`
-- `aria-controls`
+ARIA properties define **relationships and descriptions** between elements. These include `aria-labelledby`, `aria-describedby`, and `aria-controls`.
 
-### Modal Example:
+For example, consider a modal:
 
 ```html
 <div role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-desc">
@@ -96,27 +72,25 @@ ARIA properties describe **relationships and descriptions**:
 </div>
 ```
 
-This links the heading and description to the dialog for screen readers.
+In this modal, the `role="dialog"` informs assistive technologies that the div is a dialog box. The `aria-labelledby` and `aria-describedby` properties link the dialog box to its title and description, respectively. These associations provide context to screen readers, improving the user's understanding of the dialog's purpose.
 
 ---
 
 ## Live Regions
 
-Dynamic content? Use ARIA live regions to **announce updates**.
+ARIA live regions allow assistive technologies to **announce updates** to dynamic content, such as status updates or notifications.
 
 ```html
 <div role="status" aria-live="polite">Saving...</div>
 ```
 
-Values:
-- `polite` — announce when idle
-- `assertive` — announce immediately (e.g., error messages)
+In this example, `role="status"` and `aria-live="polite"` indicate that the div contains a status message to be announced when the user is idle. If the message needs to be announced immediately (for instance, error messages), `aria-live="assertive"` should be used.
 
 ---
 
 ## Labeling Elements
 
-Use `aria-label` or `aria-labelledby` for non-text elements:
+For non-text elements such as icons or SVGs, use `aria-label` or `aria-labelledby` to provide descriptive labels:
 
 ```html
 <button aria-label="Close menu">
@@ -124,61 +98,42 @@ Use `aria-label` or `aria-labelledby` for non-text elements:
 </button>
 ```
 
-Avoid using images/icons without labels.
+In this button component, the `aria-label` provides a text alternative to the non-text content, enhancing the button's accessibility.
 
 ---
 
 ## Complex Components
 
-Use ARIA when building:
-- Tabs, sliders, trees, accordions
-- Modals, alerts, tooltips
-- Menus, comboboxes, multiselect lists
-
-Frameworks like React Aria, Reach UI, and Radix already handle this — or copy their patterns.
+The use of ARIA is crucial when building complex components like tabs, sliders, trees, accordions, modals, alerts, tooltips, menus, comboboxes, and multiselect lists. While some libraries and frameworks like React Aria, Reach UI, and Radix provide out-of-the-box solutions, developers can also follow their patterns to implement accessible components.
 
 ---
 
-## Anti-Patterns
+## Common Anti-Patterns
 
-- `div role="button"` with no keyboard support
-- `aria-hidden="true"` on visible elements
-- Incorrect role hierarchy (`tab` outside `tablist`)
-- Using ARIA instead of fixing bad HTML
-- Forgetting to update `aria-*` states dynamically
+Misuse of ARIA can lead to accessibility barriers if not handled properly. Common anti-patterns include:
+
+- Using `div role="button"` without providing keyboard support
+- Applying `aria-hidden="true"` to visible elements
+- Incorrect hierarchy of roles, such as placing a `tab` outside a `tablist`
+- Using ARIA attributes instead of fixing poorly structured HTML
+- Failing to update `aria-*` states dynamically based on user interaction
 
 ---
 
 ## Real-World Usage
 
-### GitHub
-
-- Uses `aria-expanded` and `aria-controls` in dropdowns
-- Live region announcements in issue comments
-
-### Airbnb
-
-- Dialogs use `role="dialog"` with properly labeled headings
-- Interactive filters enhanced with `aria-pressed` and `aria-checked`
+Many large-scale web applications use ARIA to enhance accessibility. GitHub, for example, uses `aria-expanded` and `aria-controls` in its dropdown menus and live region announcements in issue comments. Airbnb uses `role="dialog"` for its dialogs, with properly labeled headings and interactive filters enhanced with `aria-pressed` and `aria-checked`.
 
 ---
 
-## Tools for Testing
+## Tools for Testing Accessibility
 
-- Chrome Accessibility Tree
-- Axe DevTools
-- Lighthouse → Accessibility audit
-- VoiceOver, NVDA, JAWS
+To evaluate the accessibility of your application, tools like Chrome Accessibility Tree, Axe DevTools, Lighthouse, and screen readers like VoiceOver, NVDA, and JAWS can be incredibly helpful.
 
 ---
 
-## Conclusion: Speak the Language of Assistive Tech
+## Conclusion: Speak the Language of Assistive Technologies
 
-ARIA is a bridge between your UI and the tools that help people use it.
+ARIA serves as a bridge between your user interface and the assistive technologies that can make it more accessible. When used correctly, it can significantly enhance the user experience. However, when misused, it can lead to confusion.
 
-Used right, it enhances. Used wrong, it confuses.
-
-Stick with native HTML when possible. Add ARIA when needed. And test, test, test.
-
-Because accessibility isn’t about attributes — it’s about communication.
-
+Remember to stick with native HTML elements whenever possible, supplementing them with ARIA as necessary. Regular testing is key to ensuring your application's accessibility. After all, accessibility is not just about using the correct attributes—it's about enabling clear and effective communication with your users.

@@ -1,0 +1,199 @@
+---
+title: "Debouncing and Throttling — Smart Control Over Network and UI Events"
+slug: "debounce-throttle"
+category: "Networking Techniques"
+tags: ["debounce", "throttle", "react", "networking", "performance", "input handling"]
+summary: "Master debouncing and throttling — two essential techniques for managing performance and network efficiency in user-driven interfaces. Learn how to use them for input, scroll, resize, and API call optimization."
+publishedAt: "2022-04-29"
+---
+
+# Debouncing and Throttling — Smart Control Over Network and UI Events
+
+In frontend development, many user actions can fire **way too often** — think `scroll`, `resize`, or typing in a search input. If each of those actions triggers a network request, UI update, or re-render, your app becomes slow, jittery, and unreliable.
+
+That’s where **debouncing** and **throttling** come in.
+
+These are two foundational techniques for **limiting how often a function executes** — especially for rate-sensitive events or expensive operations. They improve performance, reduce server load, and deliver smoother UX.
+
+In this article, we’ll cover:
+- What debouncing and throttling are
+- How they work and how they differ
+- Practical usage in input, scroll, and network scenarios
+- React-specific patterns with hooks
+- Real-world performance examples
+
+---
+
+## Why These Techniques Matter
+
+Without throttling or debouncing:
+- **A keystroke triggers 20 fetches**
+- **A scroll event calls 500 listeners per second**
+- **A resize causes layout thrashing**
+
+Modern UIs are fast, but the browser is **not infinitely performant** — and networks are not free. These techniques give you **fine-grained control** over user-driven flows.
+
+---
+
+## What Is Debouncing?
+
+Debouncing waits until **a user stops performing an action** before firing a function.
+
+It’s like waiting until someone **finishes talking** before you reply.
+
+```ts
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+```
+
+Use cases:
+- Search-as-you-type
+- Auto-save when user stops typing
+- Delaying input validation
+
+---
+
+## What Is Throttling?
+
+Throttling allows a function to be called **at most once every N milliseconds**, no matter how many times the triggering event happens.
+
+It's like saying: "I’ll answer you **every 500ms**, no more often."
+
+```ts
+function throttle(fn, limit) {
+  let inThrottle;
+  return (...args) => {
+    if (!inThrottle) {
+      fn(...args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+```
+
+Use cases:
+- Scroll listeners
+- Resize handlers
+- Analytics event batching
+- API polling limits
+
+---
+
+## React + Debounce Example (Search Input)
+
+```tsx
+const [query, setQuery] = useState("");
+const debouncedQuery = useDebounce(query, 500);
+
+useEffect(() => {
+  if (debouncedQuery) {
+    fetch(`/api/search?q=${debouncedQuery}`);
+  }
+}, [debouncedQuery]);
+```
+
+Use a hook like `useDebounce` to isolate timing logic and avoid state churn.
+
+---
+
+## React + Throttle Example (Scroll Performance)
+
+```tsx
+useEffect(() => {
+  const handleScroll = throttle(() => {
+    console.log("Scroll event at", window.scrollY);
+  }, 200);
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+```
+
+This prevents performance degradation on scroll-heavy pages.
+
+---
+
+## Libraries to Use
+
+- `lodash.debounce` and `lodash.throttle`
+- `use-debounce` (React hook)
+- `use-throttle` from `usehooks-ts`
+
+Don’t reinvent the wheel unless you need custom logic — mature debounce/throttle utilities are well-tested and reliable.
+
+---
+
+## Combined Strategies
+
+Sometimes you want to:
+- Debounce **input**
+- Throttle **output**
+- Or debounce a series of **throttled** events
+
+Example: Scroll + lazy load
+
+```tsx
+const loadMore = throttle(() => {
+  fetchNextPage();
+}, 1000);
+
+useEffect(() => {
+  const onScroll = debounce(() => {
+    if (nearBottom()) loadMore();
+  }, 200);
+  window.addEventListener("scroll", onScroll);
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
+```
+
+This ensures controlled fire rate + user-friendly latency.
+
+---
+
+## Real-World Usage Examples
+
+### YouTube Search
+
+- Debounces input queries by ~300ms before hitting search API
+- Reduces backend load and UX flicker
+
+### Google Maps
+
+- Throttles panning and zoom to avoid over-fetching tile data
+- Keeps UI responsive during map drag
+
+### Stripe Dashboard
+
+- Debounces form updates (e.g., billing address)
+- Throttles log scrolling and inspector panels
+
+---
+
+## Anti-Patterns
+
+- Debouncing data writes (can cause data loss if user leaves before timeout)
+- Throttling form input validation too tightly (causes laggy UX)
+- Forgetting to clear timers on unmount
+- Wrapping handlers inside render (new function every time)
+- Debouncing network fetch but not state update — causes mismatch
+
+---
+
+## Conclusion: Control the Flow, Respect the User
+
+Debouncing and throttling are about **respect**:
+- Respect the user’s intention
+- Respect the device’s limitations
+- Respect the server’s bandwidth
+
+They’re small tools — but when used well, they yield massive gains in **performance**, **UX smoothness**, and **network efficiency**.
+
+Optimize not just what you do — but how often you do it.
+
+That’s real frontend engineering.

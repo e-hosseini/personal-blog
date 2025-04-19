@@ -1,0 +1,225 @@
+---
+title: "API Authorization — Controlling What Users Can Do"
+slug: "api-authorization"
+category: "Back end APIs"
+tags: ["authorization", "rbac", "abac", "permissions", "security", "api"]
+summary: "A deep exploration of authorization — how modern APIs enforce who can access what. Covers RBAC, ABAC, policies, scopes, and patterns used by Stripe, GitHub, Firebase, and enterprise apps."
+publishedAt: "2022-01-14"
+---
+
+# API Authorization — Controlling What Users Can Do
+
+If authentication answers the question *“Who are you?”*, then **authorization** answers the more important one: *“What are you allowed to do?”*
+
+In an API-first world, authorization is not just about access control — it’s about defining trust boundaries across users, roles, teams, organizations, and systems. It determines which records are visible, which actions are allowed, and which behaviors are blocked entirely.
+
+Poorly implemented authorization can lead to:
+- Data leaks
+- Escalation of privileges
+- Accidental deletions
+- Security vulnerabilities across tenants or domains
+
+In this article, we’ll explore the landscape of modern API authorization: from Role-Based Access Control (RBAC) to Attribute-Based Access Control (ABAC), permission systems, scopes, and how leading platforms design scalable, auditable access logic.
+
+---
+
+## The Evolution of Authorization
+
+In early web apps, authorization was often hardcoded:
+```js
+if (user.role === 'admin') {
+  allowDelete = true;
+}
+```
+
+As systems matured, this evolved into centralized policy systems, where permissions could be configured per user or group, abstracted away from business logic, and managed by non-developers.
+
+Today, APIs support:
+- User-level scopes (OAuth)
+- Role-based rules (RBAC)
+- Contextual access (ABAC)
+- Row-level filtering (e.g. only see your org’s data)
+- Fine-grained policy engines (like OPA or Casbin)
+
+Authorization has become a first-class architectural concern — especially in multi-tenant and B2B platforms.
+
+---
+
+## Key Concepts in API Authorization
+
+- **Subject**: the user or identity (e.g. `user_123`)
+- **Action**: what they want to do (e.g. `read`, `write`, `delete`)
+- **Resource**: the thing being acted on (e.g. `invoice:567`)
+- **Context**: conditions (e.g. IP, time, org ID)
+
+Authorization is the decision: *Is this subject allowed to perform this action on this resource in this context?*
+
+---
+
+## Authorization Models
+
+### 1. Role-Based Access Control (RBAC)
+
+Users are assigned roles (`admin`, `editor`, `viewer`), and roles map to permissions.
+
+Pros:
+- Simple and predictable
+- Easy to model in UI
+- Good for small teams
+
+Cons:
+- Rigid and coarse-grained
+- Role explosion in complex orgs
+
+Used by: GitHub (collaborator roles), Notion (workspace roles)
+
+---
+
+### 2. Attribute-Based Access Control (ABAC)
+
+Decisions based on **attributes** of user, resource, or environment:
+```json
+{
+  "user.department": "HR",
+  "resource.type": "document",
+  "action": "view"
+}
+```
+
+Pros:
+- Very flexible
+- Context-aware
+- Enables policies like "can view documents if in same department"
+
+Cons:
+- Harder to debug and audit
+- Requires structured metadata
+
+Used by: Firebase, AWS IAM, enterprise policy engines
+
+---
+
+### 3. Permission-Based Access Control
+
+Directly assign permissions to users:
+```json
+{
+  "can_create_invoice": true,
+  "can_read_orders": false
+}
+```
+
+Fine-grained, dynamic, and easy to audit. Often implemented as bitmasks or policy flags.
+
+Used by: Stripe, Linear, internal enterprise systems
+
+---
+
+## Scopes in OAuth
+
+In OAuth2, scopes define what an access token can do:
+```http
+scope=read:user write:repos
+```
+
+Used to:
+- Limit token power
+- Prevent over-privilege
+- Enable consent prompts
+
+Tokens can be issued with minimal scopes and escalated when needed.
+
+---
+
+## Row-Level Authorization
+
+Many APIs need to limit access to **specific records**:
+- Only view invoices you own
+- Only edit users in your org
+- Only delete files you uploaded
+
+Patterns include:
+- Foreign keys tied to `user_id` or `org_id`
+- Middleware filtering queries (`SELECT ... WHERE org_id = $1`)
+- Post-query sanitization (filtering unauthorized data)
+
+Row-level security is essential in **multi-tenant apps**.
+
+---
+
+## Authorization in GraphQL
+
+GraphQL doesn't have built-in authorization — you enforce it in resolvers.
+
+Common patterns:
+- Inject user into context
+- Write guards for each resolver
+- Use directives like `@requiresRole("admin")`
+- Apply filtering in data sources (e.g. Prisma, Hasura)
+
+Example (Apollo Server):
+```js
+if (!user || !user.canView(resourceId)) {
+  throw new ForbiddenError("You don't have access");
+}
+```
+
+---
+
+## Real-World Systems
+
+### GitHub
+
+- Scopes for token permissions
+- Roles for org repos
+- 403 for unauthorized access
+- 404 for hidden resources (security by obscurity)
+
+### Stripe
+
+- Permissions per key
+- Connected accounts inherit access scopes
+- Idempotency and metadata to restrict operations
+
+### Firebase
+
+- ABAC-style rules
+- User metadata + document paths determine access
+- Used for mobile/web apps with granular needs
+
+---
+
+## Best Practices
+
+- Keep auth logic centralized and testable
+- Use declarative policies where possible
+- Scope tokens and sessions tightly
+- Avoid mixing auth checks with business logic
+- Log all access decisions for audit trails
+- Use policy-as-code tools (OPA, Cedar, Casbin) for complex orgs
+
+---
+
+## Anti-Patterns
+
+- Checking roles directly in business code
+- Overuse of “admin” bypasses
+- Ignoring row-level needs (e.g., `SELECT *`)
+- Granting all-or-nothing permissions
+- Using 200 OK for unauthorized access
+
+---
+
+## Conclusion: Authorization is Trust, Codified
+
+Authorization isn’t a checkbox — it’s a **living system** that protects your users, their data, and your platform. It's a contract between your code and your customers.
+
+It must be:
+- Auditable
+- Flexible
+- Composable
+- Secure
+
+Build it early, evolve it continuously, and treat it with the gravity it deserves.
+
+Because what users can do is often more important than who they are.

@@ -1,0 +1,194 @@
+---
+title: "Out-of-Order Responses & Race Conditions — Winning the Right Request"
+slug: "race-conditions"
+category: "Networking Techniques"
+tags: ["race conditions", "async", "networking", "react", "order guarantees"]
+summary: "Explore the problem of out-of-order network responses and how to prevent race conditions in modern apps. Learn patterns for ensuring only the latest request wins using refs, counters, and abort strategies."
+publishedAt: "2022-10-21"
+---
+
+# Out-of-Order Responses & Race Conditions — Winning the Right Request
+
+Modern UIs are full of **concurrent network calls** — and that creates opportunities for one of the trickiest bugs: **race conditions**.
+
+A race condition happens when multiple async operations **compete**, and the one that finishes first wins — even if it **shouldn’t**.
+
+For example:
+- A user types “dog” → fetch for “dog” starts
+- Then types “do” → fetch for “do” starts later, but returns first
+- UI now shows results for “do”, even though “dog” is the latest input
+
+This is a race condition caused by **out-of-order responses**.
+
+In this article, we’ll dive into:
+- Why race conditions happen
+- How to detect and reproduce them
+- Patterns to cancel, compare, or ignore stale responses
+- Implementations in React using refs, tokens, and counters
+- Real-world strategies from search inputs, autocompletes, and filters
+
+---
+
+## Why Race Conditions Matter
+
+They’re subtle. They break trust.
+
+A user types something — sees the wrong result. Or clicks to sort — and the old response overwrites the new one. Or opens a modal — and stale data loads in.
+
+Most users won’t file a bug. They’ll just think your app is broken.
+
+---
+
+## Where Race Conditions Happen
+
+- **Search inputs** (type fast, many requests fire)
+- **Dropdown filters** (select, reselect quickly)
+- **Tabs or modals** (navigate quickly)
+- **Rapid navigation** (client-side router with prefetch)
+- **Parallel data fetching** (combined effects or compound queries)
+
+---
+
+## Example of the Problem
+
+```tsx
+useEffect(() => {
+  fetch(`/api/search?q=${query}`)
+    .then(res => res.json())
+    .then(setResults);
+}, [query]);
+```
+
+This fires a fetch on each query change — but doesn’t cancel the previous one. If older fetches resolve last, they overwrite new ones.
+
+---
+
+## Solutions
+
+### 1. AbortController (with fetch)
+
+```tsx
+useEffect(() => {
+  const controller = new AbortController();
+
+  fetch(`/api/search?q=${query}`, { signal: controller.signal })
+    .then(res => res.json())
+    .then(setResults)
+    .catch(err => {
+      if (err.name === "AbortError") return;
+    });
+
+  return () => controller.abort();
+}, [query]);
+```
+
+This **cancels stale requests** before firing the new one.
+
+---
+
+### 2. Request ID Tracking
+
+Use a ref to track the current request:
+
+```tsx
+const requestIdRef = useRef(0);
+
+useEffect(() => {
+  const id = ++requestIdRef.current;
+
+  fetch(`/api/search?q=${query}`)
+    .then(res => res.json())
+    .then(data => {
+      if (id === requestIdRef.current) setResults(data);
+    });
+}, [query]);
+```
+
+Only the latest request can update state.
+
+---
+
+### 3. Sequence Token Pattern
+
+Create a `makeCancelable` wrapper around each request:
+
+```ts
+function makeCancelable(promise) {
+  let hasCanceled = false;
+  const wrapped = new Promise((resolve, reject) => {
+    promise.then((val) => (hasCanceled ? null : resolve(val)));
+  });
+  return {
+    promise: wrapped,
+    cancel: () => (hasCanceled = true)
+  };
+}
+```
+
+Use this to race and cancel old ones when needed.
+
+---
+
+## Race-Aware Libraries
+
+### React Query
+
+- Automatically **cancels** in-flight queries on refetch
+- Deduplicates stale results
+
+```tsx
+useQuery(["search", query], fetchSearch, { keepPreviousData: true });
+```
+
+### SWR
+
+- Ensures **latest response wins** using timestamps and cache keys
+- `mutate()` respects freshness
+
+---
+
+## Real-World Examples
+
+### GitHub Autocomplete
+
+Typing in the issue search bar:
+- Debounces input
+- Cancels prior fetches
+- Uses a race-safe cache layer
+
+### VSCode Extensions Marketplace
+
+- Filtering by publisher or keyword cancels old results
+- Avoids UI flashing from stale entries
+
+### Notion Link Picker
+
+- As you type to find a page, only the latest result is shown
+- No jumping or flickering due to out-of-order results
+
+---
+
+## Anti-Patterns
+
+- Triggering fetch without cancel/ref guard
+- Ignoring stale responses
+- Updating state after component unmount (memory leak!)
+- Using async/await in `useEffect` without cleanup
+- Reacting to multiple input changes without debounce
+
+---
+
+## Conclusion: Control the Timeline
+
+Race conditions aren’t about speed — they’re about **who should win**.
+
+You’re not just fetching data. You’re coordinating a timeline:
+- When did it start?
+- When did it end?
+- What else happened in between?
+
+The answer isn’t “first come, first served.”
+
+It’s “latest wins.”
+
+And your UI should reflect that truth.

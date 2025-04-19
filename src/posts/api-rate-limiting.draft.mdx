@@ -1,0 +1,176 @@
+---
+title: "Rate Limiting — Defending APIs Without Breaking UX"
+slug: "api-rate-limiting"
+category: "Back end APIs"
+tags: ["api", "rate limiting", "throttling", "ddos", "performance", "scalability"]
+summary: "A deep exploration of rate limiting in APIs — why it exists, how it works, and how to balance protection, fairness, and usability. Includes strategies, headers, error design, and real-world use cases."
+publishedAt: "2022-02-18"
+---
+
+# Rate Limiting — Defending APIs Without Breaking UX
+
+APIs are doors into your infrastructure — and without rate limits, they’re wide open.
+
+Rate limiting is how we protect backend systems from abuse, accidental overload, or misuse. But it’s also how we **shape client behavior**, distribute capacity fairly, and ensure system health — all without sacrificing usability.
+
+Done well, rate limiting is invisible. Done poorly, it becomes the most frustrating part of a developer’s day.
+
+This article covers everything from the theory of rate limiting to the practical implementation in REST and GraphQL APIs, with real-world strategies from Stripe, GitHub, Shopify, and beyond.
+
+---
+
+## Why Rate Limiting Exists
+
+Your API is a shared resource — memory, CPU, DB access, bandwidth. A few misbehaving clients (or a spike in traffic) can jeopardize your **entire system**.
+
+Rate limiting protects you from:
+- 🛡 DDoS attacks
+- 🧪 Overzealous testing or infinite retry loops
+- 🧵 Background jobs gone wild
+- 📱 Mobile apps polling too often
+- 🔁 Bots scraping your catalog
+
+It’s both a **safety mechanism** and a **governance tool**. But the trick is enforcing it in a way that’s transparent, fair, and predictable.
+
+---
+
+## Strategies and Algorithms
+
+### 1. Fixed Window
+
+```txt
+Allow 100 requests per 60 seconds.
+Resets every minute.
+```
+
+✅ Simple  
+❌ Burst traffic at the reset edge can overload systems.
+
+---
+
+### 2. Sliding Window
+
+Tracks requests over a rolling window (e.g. last 60 seconds), not a fixed tick.
+
+✅ Smooth distribution  
+✅ Better fairness  
+❌ More expensive to compute
+
+---
+
+### 3. Token Bucket
+
+Each user gets a bucket of tokens. Requests consume tokens. Tokens refill over time.
+
+✅ Allows short bursts  
+✅ Very flexible  
+💡 Used by Stripe, Cloudflare
+
+---
+
+### 4. Leaky Bucket
+
+Like token bucket, but processed at a constant rate — smooth output over time.
+
+✅ Controls outgoing rate  
+✅ Useful for queue-like flows
+
+---
+
+## How to Enforce Rate Limits
+
+- By **IP address**
+- By **API key or auth token**
+- By **user account ID**
+- By **resource type** (e.g. write-heavy vs read-heavy)
+- By **endpoint**
+
+💡 Good APIs **differentiate** between read and write limits:
+- GET: higher limits
+- POST/PUT/DELETE: lower limits
+
+---
+
+## HTTP Headers for Clients
+
+Exposing limits to clients builds trust and enables smart retries.
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 23
+X-RateLimit-Reset: 1691334020
+Retry-After: 30
+```
+
+- `X-RateLimit-Limit`: max requests allowed
+- `X-RateLimit-Remaining`: how many left
+- `X-RateLimit-Reset`: Unix timestamp when it resets
+- `Retry-After`: recommended wait time (seconds or HTTP date)
+
+Always return `429 Too Many Requests` for rate limit violations.
+
+---
+
+## Real-World Rate Limiting Systems
+
+### Stripe
+
+- Different tiers for public vs secret keys
+- `429` for violation, with detailed headers
+- Limits depend on endpoint class (write, read, webhook)
+
+### GitHub
+
+- REST: 5000 req/hour per user/token
+- GraphQL: point-based limit (cost depends on query shape)
+- Includes headers + GraphQL `rateLimit` introspection field
+
+### Shopify
+
+- Bucket-based rate limits per app
+- Admin API allows bursts, then throttles
+- `Retry-After` included in response
+
+---
+
+## Frontend Considerations
+
+- Use exponential backoff with jitter (not fixed retries)
+- Detect and surface rate limit messages in UI
+- Pre-warn users if approaching limits (e.g. show API quota meter)
+- For B2B apps, expose limits via developer dashboards
+
+---
+
+## Best Practices
+
+- Normalize limits by customer plan (e.g. free vs enterprise)
+- Provide soft warnings before hard blocks
+- Log all violations with context (IP, token, endpoint)
+- Rate limit before authentication layer if DDoS risk
+- Never silently drop requests — always notify clients
+
+---
+
+## Anti-Patterns
+
+- Using 500/503 instead of 429
+- No headers = mystery failures
+- Throttling non-critically (e.g. password resets, help center)
+- Applying same rate to all endpoints indiscriminately
+- Not differentiating bots vs browsers vs mobile clients
+
+---
+
+## Conclusion: Design Limits with Empathy
+
+Rate limiting is more than a traffic cop — it’s a UX touchpoint and a systems guardrail. Smart limits:
+- Encourage good behavior
+- Protect shared infrastructure
+- Educate developers
+- Scale predictably
+
+Build rate limits like you build APIs: with transparency, intention, and empathy.
+
+Limits are inevitable — frustration isn’t.

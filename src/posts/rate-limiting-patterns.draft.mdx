@@ -1,0 +1,206 @@
+---
+title: "Rate Limiting Patterns at Scale — Balancing Fairness, Speed, and Protection"
+slug: "rate-limiting-patterns"
+category: "Back end APIs"
+tags: ["rate limiting", "api", "scalability", "infrastructure", "ddos", "quotas"]
+summary: "An advanced look at rate limiting patterns for APIs at scale — covering token buckets, leaky buckets, quota enforcement, distributed counters, and the systems used by platforms like GitHub, Stripe, Cloudflare, and AWS."
+publishedAt: "2022-10-28"
+---
+
+# Rate Limiting Patterns at Scale — Balancing Fairness, Speed, and Protection
+
+Rate limiting is easy in a toy app — and brutal in production.
+
+It’s one thing to say “100 requests per minute per user.” It’s another to **enforce that across 10 data centers, 20 microservices, 3 API gateways, and billions of requests per day**.
+
+At scale, rate limiting is a system — one that touches caching, replication, performance, storage, real-time enforcement, and developer UX.
+
+In this article, we explore the **architecture patterns** used to build scalable, fair, and resilient rate limiting for APIs that operate globally and serve millions of developers. We’ll look at algorithms, data stores, enforcement strategies, and lessons learned from the trenches.
+
+---
+
+## Why Scalable Rate Limiting Is Hard
+
+In theory:
+- You set a quota
+- Track usage
+- Enforce limits
+
+In practice:
+- Traffic is bursty
+- Clocks are inconsistent
+- Requests arrive at different edges
+- Some limits are per-user, others per-IP or per-resource
+- You need global visibility — but local performance
+
+A naive in-memory counter doesn’t cut it. Scalable rate limiting must be **fast, accurate, fair, and distributed**.
+
+---
+
+## Core Strategies and Concepts
+
+### Token Bucket Algorithm
+
+Each identity (user, key, IP) has a “bucket” of tokens. Tokens are consumed per request and regenerated at a fixed rate.
+
+- Allows short bursts above rate
+- Smooths traffic without hard cutoff
+- Easy to implement in Redis or memory
+
+Used by: Stripe, AWS, GitHub
+
+---
+
+### Leaky Bucket Algorithm
+
+Processes requests at a fixed rate. Excess requests are queued or dropped.
+
+- Good for output shaping
+- Smooths unpredictable input
+- Requires queue infrastructure
+
+Used when: You want deterministic flow (e.g., sending emails)
+
+---
+
+### Fixed and Sliding Windows
+
+**Fixed window**: Count resets every N seconds  
+**Sliding window**: Count over the last N seconds
+
+Sliding windows are fairer and smoother but more complex to implement (needs timestamp tracking or window bucketing).
+
+Used for: Login attempts, burst control, polling APIs
+
+---
+
+### Distributed Rate Limiting
+
+The challenge: how to enforce a global limit across nodes?
+
+**Strategies:**
+- Redis-based counters (with TTL, Lua scripts)
+- DynamoDB or Bigtable with atomic counters
+- Memcached with sliding windows
+- Central limiter service with gRPC
+- In-memory + sync at edge (best-effort)
+
+---
+
+## Real-World Systems
+
+### GitHub
+
+- REST API uses hourly quotas (5000/hour per user/token)
+- GraphQL uses query cost budget (1000 points/hour)
+- Tracks via token and enforces at edge
+- Returns headers: `X-RateLimit-Limit`, `Remaining`, `Reset`
+
+### Stripe
+
+- Differentiates public and secret keys
+- Bucket-based limits per endpoint class (read, write, auth)
+- Quotas reset every second/minute depending on key type
+- Monitoring tools flag overuse patterns
+
+### Cloudflare
+
+- Rate limits based on IP, user agent, route
+- Tracks by region/PoP
+- Exposes rules as config in dashboard
+- Drops requests with configurable response headers
+
+---
+
+## Advanced Features
+
+- **Overdraft window**: Temporary forgiveness for minor bursts
+- **Quota pooling**: Teams share a limit instead of per-user quotas
+- **Dynamic quotas**: Based on plan tier or usage growth
+- **Billing hooks**: Exceeding limit triggers upsell or pricing actions
+- **Audit logging**: For abuse tracking and customer support
+
+---
+
+## Caching and Syncing Limits
+
+- Use Redis or Memcached for speed
+- TTL ensures auto-reset
+- Use Lua scripts for atomic ops:
+  ```lua
+  if redis.call("GET", key) > limit then return 0 end
+  ```
+
+- For scale: replicate state using pub/sub or stream logs
+- For precision: shard counters by region or time window
+
+---
+
+## Exposing Rate Info to Clients
+
+Always return structured rate metadata:
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1710101600
+Retry-After: 30
+```
+
+Or in GraphQL:
+
+```json
+{
+  "rateLimit": {
+    "limit": 1000,
+    "remaining": 23,
+    "resetAt": "2025-04-19T10:45:00Z"
+  }
+}
+```
+
+---
+
+## Best Practices
+
+- Bucket by user, key, IP, or org — depending on the context
+- Don’t block on sync — degrade gracefully
+- Use exponential backoff for retries
+- Pre-warn if a client is approaching limits
+- Group traffic by category (read/write/mutation/stream)
+
+---
+
+## Anti-Patterns
+
+- One-size-fits-all limits
+- Forgetting to log denials or limit hits
+- Storing limits in relational DBs (too slow!)
+- Hard-coding limits in app logic
+- Using 200 for blocked requests (confusing!)
+
+---
+
+## Monitoring and Tuning
+
+Track:
+- Bucket fill/drain rates
+- 429 responses
+- Abuse patterns (e.g., brute-force login)
+- Top violators (per key or IP)
+- False positives (rate-limited legitimate traffic)
+
+Provide dashboards to internal teams and external developers when possible.
+
+---
+
+## Conclusion: Rate Limits Are Policy, Not Just Code
+
+Rate limiting isn’t just a gatekeeper — it’s a statement about **capacity, fairness, and responsibility**. It ensures one user doesn’t harm another. It tells clients what to expect. And it protects your business as much as your backend.
+
+At scale, rate limiting becomes a distributed, observable, policy-driven platform — not a single function call.
+
+Build it like it matters.
+
+Because at scale, it absolutely does.

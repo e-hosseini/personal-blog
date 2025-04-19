@@ -1,64 +1,61 @@
 ---
-title: "Optimize Loading Sequences — Deliver What Matters, First"
-slug: "optimize-loading-sequences"
-category: "Performance"
-tags: ["performance", "loading order", "resource prioritization", "critical path", "progressive rendering"]
-summary: "Discover how to structure and sequence asset loading to prioritize meaningful content. Learn strategies for reducing First Contentful Paint and Largest Contentful Paint by delivering the right bytes first."
+title: "Advanced Strategies for Optimizing Load Sequences: Delivering What Matters First"
+slug: "advanced-strategies-for-optimizing-load-sequences"
+category: "Performance Optimization"
+tags: ["performance optimization", "load order", "resource prioritization", "critical rendering path", "progressive rendering"]
+summary: "This comprehensive guide delves into advanced strategies on how to structure and sequence asset loading in JavaScript applications to prioritize meaningful content. Learn about reducing First Contentful Paint (FCP) and Largest Contentful Paint (LCP) by sequencing the delivery of the right bytes first."
 publishedAt: "2022-09-16"
 ---
 
-# Optimize Loading Sequences — Deliver What Matters, First
+# Advanced Strategies for Optimizing Load Sequences: Delivering What Matters First
 
-Speed isn’t just about downloading fewer bytes. It’s about downloading the **right bytes** in the **right order**.
+Application performance is not merely about reducing the amount of data to be downloaded. Instead, it involves downloading the **right bytes** in the **right order**. Even if your application is fast, users may perceive it as slow if they're left staring at a blank screen while crucial resources are loaded last. Thus, optimizing the **loading sequence** becomes vital, which entails delivering:
+- What's visible first
+- What's interactive next
+- What's secondary later
 
-Your app might be fast — but if the user sees a blank screen while critical resources load last, they’ll think it’s slow.
-
-**Loading sequence optimization** is the art of delivering:
-- What’s visible first
-- What’s interactive next
-- What’s secondary later
-
-In this guide, we’ll explore:
-- Resource prioritization for fonts, images, scripts
-- HTTP/2 and preload strategies
-- HTML structure, skeleton UIs, and progressive enhancement
+In this comprehensive guide, we delve into various strategies, including:
+- Resource prioritization for fonts, images, and scripts
+- Leveraging HTTP/2 and preload strategies
+- Appropriate HTML structure, skeleton UIs, and progressive enhancement
 - Real-world sequencing patterns
-- Performance metrics like LCP, FCP, and TTI
+- Performance metrics like LCP, FCP, and Time to Interactive (TTI)
 
 ---
 
-## Understanding the Critical Path
+## In-Depth Understanding of the Critical Rendering Path
 
-Every web page has a **critical rendering path**:
+Every web page embarks on a **critical rendering path**, a sequence of steps browsers follow to convert HTML, CSS, and JavaScript bytes into a rendered webpage. The steps include:
 1. Browser loads HTML
 2. Parses `<head>`, downloads scripts/CSS
-3. Builds DOM and CSSOM trees
+3. Builds Document Object Model (DOM) and CSS Object Model (CSSOM) trees
 4. Renders first paint (FCP)
 5. Shows largest element (LCP)
 6. Allows interaction (TTI)
 
-If your loading sequence blocks steps 3–5, users stare at empty screens.
+If your loading sequence obstructs steps 3–5, users are left staring at blank screens, leading to a poor user experience.
 
 ---
 
-## What Should Load First?
+## Prioritizing What Should Load First
 
-1. **HTML** — render something
-2. **CSS** — styles make content readable
-3. **Critical JS** — hydration and interactivity
-4. **Fonts** — ideally preloaded
-5. **Images above the fold**
-6. **Data for above-the-fold components**
+Sequencing the order of resource loading is crucial for performance. Here is a proposed order:
+1. **HTML** — This is essential to render something on the screen
+2. **CSS** — Stylesheets are required to make the content readable and formatted
+3. **Critical JS** — The JavaScript that is necessary for hydration and interactivity. This includes the scripts required to boot-up the primary interactions on the webpage.
+4. **Fonts** — Fonts are ideally preloaded to prevent Flash of Invisible Text (FOIT)
+5. **Images above the fold** — Images that appear without scrolling must be loaded first to improve the perceived performance
+6. **Data for above-the-fold components** — Data needed for the visible portion of the webpage should be loaded first
 
-Everything else can wait.
+All other resources can be loaded later without impacting perceived performance.
 
 ---
 
-## Techniques
+## Advanced Techniques for Load Sequencing
 
-### Inline Critical CSS
+### Inlining Critical CSS
 
-Inline CSS for above-the-fold components:
+In order to render the initial viewport quickly, we can inline the CSS for above-the-fold components directly in the HTML document. For instance:
 
 ```html
 <style>
@@ -66,97 +63,108 @@ Inline CSS for above-the-fold components:
 </style>
 ```
 
-Load the rest async.
+The rest of the CSS can be loaded asynchronously to prevent render blocking.
 
-### Preload Key Assets
+### Preloading Key Assets
+
+The HTML preload link can be used to inform the browser about resources that the page will need very soon after loading. This can be beneficial for fonts, critical scripts, or other resources. For instance:
 
 ```html
 <link rel="preload" href="/fonts/inter.woff2" as="font" crossorigin>
 <link rel="preload" href="/main.js" as="script">
 ```
 
-Preload only what’s essential.
+Preload should be used sparingly and only for resources that are essential for the above-the-fold content.
 
-### Defer or Async Scripts
+### Deferring or Asyncing Scripts
+
+Scripts can be made non-render-blocking by using the `async` and `defer` attributes. The `async` attribute loads the script asynchronously with the rest of the webpage, while the `defer` attribute ensures that the script is executed only after the document has been parsed. For instance:
 
 ```html
 <script src="/analytics.js" async></script>
 <script src="/main.js" defer></script>
 ```
 
-Never block rendering for non-critical JS.
-
 ---
 
 ## JavaScript Execution Order
 
-Prefer:
-- Early hydration of above-the-fold components
-- Delayed hydration or lazy-load for below-the-fold
-- Defer analytics, error tracking, social embeds
+To improve the perceived performance, follow these strategies:
 
-Use React.lazy + Suspense + loading indicators to stage rendering.
+- Hydrate above-the-fold components early. This means that the JavaScript necessary to make these components interactive should be loaded first.
+- Hydrate or lazy-load components below-the-fold. This ensures that resources for components that are not visible initially do not block the rendering of the above-the-fold content.
+- Defer analytics, error tracking, and social embeds. These scripts are not essential for the initial rendering of the webpage and can be loaded after the primary content has been loaded and made interactive.
 
----
-
-## Image Strategy
-
-- Use `loading="lazy"` on offscreen images
-- Preload hero images
-- Prefer `srcset` for responsive loads
-- Use placeholders (blurhash, LQIP, skeleton)
+Use features like `React.lazy`, `React.Suspense`, and loading indicators to stage rendering and improve perceived performance.
 
 ---
 
-## Data Loading
+## Image Loading Strategy
 
-For dynamic SPAs:
-- Fetch above-the-fold data **in parallel** with component loading
-- Use `Suspense` and `fallback` wisely
-- Preload data using React Query or SWR’s `prefetchQuery`
+Images contribute significantly to the total webpage size. Therefore, an efficient strategy to load images is crucial for performance. Some guidelines are:
+
+- Use `loading="lazy"` on offscreen images. This ensures that images outside the viewport are loaded only when they come into the viewport, saving bandwidth.
+- Preload hero images. These are typically large, eye-catching images that are above-the-fold and are crucial for user experience.
+- Prefer `srcset` for responsive loads. This allows the browser to choose an image source based on device capabilities, improving performance.
+- Use placeholder techniques like blur up, Low-Quality Image Placeholder (LQIP), or skeleton screens to provide immediate feedback while the actual images load.
+
+---
+
+## Data Loading Strategy
+
+For dynamic Single Page Applications (SPAs), the strategy to load data is as important as loading static resources. Some guidelines are:
+
+- Fetch above-the-fold data **in parallel** with component loading. This ensures that the data required for the initial render is available as soon as possible.
+- Use `React.Suspense` and `fallback` wisely. This allows you to show some fallback content while waiting for the data to load.
+- Preload data using libraries like React Query or SWR’s `prefetchQuery`. This ensures that the data is available as soon as it is needed.
 
 ---
 
 ## Real-World Example: Stripe Dashboard
 
-1. Loads core shell + nav instantly
-2. Prefetches customer data + sidebar metrics
-3. Loads charts asynchronously
-4. Lazy-loads less-used features (e.g. export CSV)
+The Stripe Dashboard demonstrates a good loading sequence strategy:
 
-Results in fast paint, visible structure, then progressive enhancement.
+1. It loads the core shell and navigation instantly, providing immediate feedback to the users.
+2. It prefetches customer data and sidebar metrics while the core shell is being rendered.
+3. It loads charts asynchronously. Charts are usually heavy and can be loaded asynchronously without impacting the initial render.
+4. It lazy-loads less-used features, like exporting to CSV. This ensures that these features do not block the rendering of the primary content.
+
+This results in a fast paint of the core content, a visible structure, and then progressive enhancement.
 
 ---
 
 ## Performance Metrics That Matter
 
-- **FCP** (First Contentful Paint): earliest feedback
-- **LCP** (Largest Contentful Paint): when content is usable
-- **TTI** (Time to Interactive): input responsiveness
+Performance metrics are crucial to understand and measure the impact of load sequence optimization. Some important metrics are:
 
-Optimize loading sequence to minimize **LCP** and **TTI**.
+- **FCP** (First Contentful Paint): This is the time when the browser first renders any content from the DOM. This is an important metric as it provides the earliest feedback to the user that something is happening.
+- **LCP** (Largest Contentful Paint): This is the time when the largest content element in the viewport becomes visible. This is an important metric as it indicates when the main content of the page has finished rendering.
+- **TTI** (Time to Interactive): This is the time when the page becomes fully interactive. This is an important metric as it indicates when the user can start interacting with the page.
+
+Optimizing the loading sequence can significantly improve the **LCP** and **TTI** metrics, improving the overall performance of the webpage.
 
 ---
 
-## Anti-Patterns
+## Anti-Patterns to Avoid
 
-- `<script>` blocking before `<body>` paint
-- Lazy-loading above-the-fold content
-- Fetching all data on mount (esp. for tabs not visible)
-- Using custom font without fallback font during render
-- Third-party tags that block TTI
+Certain practices can hinder the performance of your webpage. Some of these are:
+
+- Using a `<script>` tag in the `<head>` that blocks rendering before the `<body>` starts to paint. This leads to blank screens and a poor user experience.
+- Lazy-loading above-the-fold content. This can delay the rendering of the primary content.
+- Fetching all data on mount, especially for tabs that are not visible initially. This can lead to unnecessary network requests and data usage.
+- Using custom fonts without a fallback font. This can lead to the Flash of Invisible Text (FOIT) where text is invisible until the custom font has loaded.
+- Using third-party tags that block TTI. These can be analytics, social media, or chat widgets that block the main thread, delaying interactivity.
 
 ---
 
 ## Conclusion: Fast is a Feeling, and Sequence is the Secret
 
-Your app is only as fast as **what the user sees**.
+The perceived performance of your application is only as fast as **what the user sees** first. If you prioritize the content that is visible and defer the rest, users perceive the application as being fast — even if bytes are still flowing behind the scenes.
 
-If you prioritize visible content and defer the rest, users perceive speed — even if bytes still flow behind the scenes.
+So, sequence your load like you would sequence a story:
 
-So order your load like you’d order a story:
+Start with the most crucial part of the page.
 
-Start with the most important page.
+Then, gradually reveal the rest.
 
-Then turn it.
-
+This approach to loading sequence optimization, combined with the strategies and techniques explained above, can significantly improve the perceived and actual performance of your JavaScript applications.

@@ -1,0 +1,182 @@
+---
+title: "Bundle Splitting, Lazy Loading & Code Splitting — Making the First Load Fast"
+slug: "bundle-splitting-lazy-loading-code-splitting"
+category: "Performance"
+tags: ["performance", "code splitting", "lazy loading", "webpack", "vite", "react"]
+summary: "An in-depth guide to bundle splitting and lazy loading. Learn how to break your frontend code into smaller chunks to reduce initial load time, speed up perception, and optimize runtime cost in modern apps."
+publishedAt: "2022-03-11"
+---
+
+# Bundle Splitting, Lazy Loading & Code Splitting — Making the First Load Fast
+
+The larger your JavaScript bundle, the longer users wait. It's that simple — and that serious.
+
+When a user opens your app, they don’t want to download every feature you’ve ever built. They just want to see the homepage. That’s where **bundle splitting**, **lazy loading**, and **code splitting** come into play.
+
+These techniques are essential to modern frontend performance engineering. By breaking your code into smaller parts, you:
+- Load only what’s needed for the current view
+- Reduce initial bundle size
+- Speed up time to interactive
+- Improve Core Web Vitals like LCP and FID
+- Enable better caching strategies
+
+---
+
+## A Brief History
+
+In the early days of SPAs, bundlers like Webpack merged every script into a single monolithic `.js` file. This was convenient but terrible for performance — especially on mobile networks.
+
+As apps grew, so did bundles. 1MB+. 2MB+. Users had to wait seconds just to see a button.
+
+React, Angular, and Vue began offering **route-based lazy loading**. Webpack 2+ introduced `import()` for dynamic loading. Now, tools like Vite and Rollup make code splitting almost seamless.
+
+Modern browsers, CDNs, and build tools are optimized for **modular, lazy-loadable architectures** — and it’s our job to leverage them.
+
+---
+
+## Core Concepts
+
+### Bundle Splitting
+
+Break your app into multiple output files (chunks) instead of a single bundle:
+
+- Main bundle
+- Vendor bundle (libs like React, lodash)
+- Route-specific bundles (e.g. Dashboard.js, Settings.js)
+
+Smaller bundles load faster and **can be cached independently**.
+
+### Code Splitting
+
+Split your code **by demand** using dynamic imports:
+
+```tsx
+const Dashboard = React.lazy(() => import("./Dashboard"));
+```
+
+Webpack automatically creates a new chunk for each `import()`.
+
+### Lazy Loading
+
+Load a component **only when it’s needed**:
+
+```tsx
+<Suspense fallback={<Spinner />}>
+  <Dashboard />
+</Suspense>
+```
+
+This defers the cost of loading non-critical code — improving first load time.
+
+---
+
+## Tooling and Configuration
+
+### Webpack
+
+Enable code splitting with `import()`:
+
+```js
+output: {
+  filename: "[name].bundle.js",
+  chunkFilename: "[name].chunk.js"
+}
+```
+
+Use `SplitChunksPlugin` to split vendor code:
+
+```js
+optimization: {
+  splitChunks: {
+    chunks: "all"
+  }
+}
+```
+
+### Vite
+
+Vite uses Rollup under the hood and splits chunks based on dynamic imports.
+
+To customize:
+
+```ts
+rollupOptions: {
+  output: {
+    manualChunks: {
+      vendor: ["react", "react-dom"]
+    }
+  }
+}
+```
+
+---
+
+## Real-World Usage
+
+### Facebook
+
+Facebook splits the newsfeed, chat, notifications, and profile views into **separate modules**.
+
+They also lazy load comments, reactions, and image viewers to minimize startup JS.
+
+### Airbnb
+
+Uses route-based splitting and prefetches assets for the next page as you hover over links.
+
+### Google Docs
+
+Splits every major editor plugin into lazy modules. You don’t load spreadsheet logic until you open a spreadsheet.
+
+---
+
+## Pitfalls and Gotchas
+
+- Over-splitting can increase HTTP overhead (many small files)
+- Lazy loading too much may delay essential UI
+- Untracked dynamic imports can bloat vendor chunk
+- Suspense fallback UI must be graceful — avoid flicker
+
+---
+
+## Progressive Enhancement
+
+Use `rel="preload"` or `rel="prefetch"` to **hint to the browser**:
+
+```html
+<link rel="preload" href="/static/js/Dashboard.chunk.js" as="script" />
+```
+
+This can reduce delay when the user navigates.
+
+---
+
+## Metrics to Watch
+
+- **First Contentful Paint (FCP)**
+- **Largest Contentful Paint (LCP)**
+- **Time to Interactive (TTI)**
+- **Total Blocking Time (TBT)**
+
+Code splitting helps all of these by reducing JavaScript evaluation and execution time.
+
+---
+
+## Anti-Patterns
+
+- Bundling admin dashboard logic with landing page
+- Importing all routes/components eagerly
+- Not chunking third-party vendors
+- Lazy loading above-the-fold content (hurts LCP)
+
+---
+
+## Conclusion: Load Less, So Users See More
+
+Bundle splitting and lazy loading aren’t just performance tricks — they’re **fundamental architectural patterns** for modern web apps.
+
+They reward planning. They reward modular thinking.
+
+And they give users the one thing they actually want:
+
+Speed.
+

@@ -1,55 +1,56 @@
 ---
-title: "Memory Leaks — The Silent Killers of Frontend Performance"
+title: "Memory Leaks — The Silent Performance Killers in Frontend Development"
 slug: "memory-leaks"
 category: "Performance"
 tags: ["performance", "memory leaks", "javascript", "react", "profiling"]
-summary: "Memory leaks degrade performance gradually and often invisibly. Learn how to detect, prevent, and fix memory leaks in frontend apps — especially in React and long-lived sessions."
+summary: "Memory leaks can subtly degrade the performance of your frontend applications. This article delves into how to detect, prevent, and rectify memory leaks, particularly in React and long-lived sessions."
 publishedAt: "2022-08-19"
 ---
 
-# Memory Leaks — The Silent Killers of Frontend Performance
+# Memory Leaks — The Silent Performance Killers in Frontend Development
 
-Your app starts fast. A few tabs later, it slows. Scroll stutters. RAM usage climbs.
+Memory leaks, the subtle performance killers, are all too common in frontend development. These leaks gradually slow down your application, making it sluggish over time. Your application may start fast, but as more tabs open and more operations occur, it slows down, the scrolling stutters, and the RAM usage climbs. 
 
-Sound familiar?
+This, my friend, is the bane of memory leaks. 
 
-That’s a memory leak.
+In the realm of frontend engineering, these memory leaks are stealthy killers. They don't crash your application outright; instead, they erode it gradually. Every click, every page, every component that mounts something... and never unmounts it. Or worse — it never lets it go. 
 
-In frontend engineering, **memory leaks** are stealthy performance killers. They don’t crash your app — they **erode** it. Every click, every page, every component mounts something... and never unmounts it. Or worse — it never lets it go.
-
-In this article, we’ll explore:
-- What memory leaks are and how they happen
-- Common causes in JavaScript and React
-- Tools to detect leaks in DevTools
-- Best practices to avoid them in the first place
+This article will delve deeper into the concept of memory leaks, discussing:
+- What memory leaks are and how they occur
+- The common causes of memory leaks in JavaScript and React
+- How to utilize DevTools to detect leaks
+- Best practices to prevent memory leaks from the get-go
 
 ---
 
 ## What Is a Memory Leak?
 
-A memory leak happens when memory that’s no longer needed **isn’t released**.
+A memory leak occurs when memory that is no longer required is not released back to the system. 
 
-In a garbage-collected language like JavaScript, you don’t free memory manually. But memory is only garbage-collected when **nothing references it**.
+In a garbage-collected language such as JavaScript, you don't manually free up memory. However, this memory is only garbage-collected when nothing references it. 
 
-Leaked memory is:
+Hence, leaked memory could be:
 - Retained in closures
 - Trapped in listeners or timers
-- Stuck in hidden globals
+- Stuck in hidden global variables
 - Or held by detached DOM nodes
 
 ---
 
-## Signs You Have a Leak
+## Identifying the Presence of a Leak
 
-- Gradual slowdown over time
-- Increasing memory usage in Chrome Task Manager
-- Tabs that never release memory
-- Event handlers firing on unmounted components
-- Users reporting “feels sluggish after a while”
+Memory leaks can be quite elusive. However, the following signs can indicate their presence:
+- A gradual slowdown of your application over time
+- An increase in memory usage observed in the Chrome Task Manager
+- Tabs that do not release memory even after they are closed
+- Event handlers firing on components that have been unmounted
+- Users reporting a sluggish feel after using the application for a while
 
 ---
 
-## Common Causes
+## Common Culprits Behind Memory Leaks
+
+Let's delve into the common causes of memory leaks in JavaScript and React applications.
 
 ### 1. Forgotten Timeouts and Intervals
 
@@ -60,7 +61,7 @@ useEffect(() => {
 }, []);
 ```
 
-Without `clearInterval`, memory and CPU are consumed **forever**.
+In the above code snippet, the `setInterval` function is used to execute the `doStuff()` function every 1000 milliseconds. However, if the returned `clearInterval` function is not invoked, the memory and CPU are consumed indefinitely, leading to a memory leak.
 
 ---
 
@@ -72,8 +73,7 @@ useEffect(() => {
   return () => window.removeEventListener("resize", handler);
 }, []);
 ```
-
-If not removed, listeners accumulate with every mount.
+In this example, an event listener is added to the window object to handle the resize event. If this listener is not removed when the component unmounts, it continues to consume memory, and with every new mounting of the component, more listeners accumulate, causing a memory leak.
 
 ---
 
@@ -86,8 +86,7 @@ function addToStore(item) {
   store.push(item);
 }
 ```
-
-If `store` grows forever and is never flushed, it becomes a leak.
+In this piece of code, the `store` array is growing indefinitely as new items are added, and it is never flushed. This uncontrolled growth leads to a memory leak.
 
 ---
 
@@ -98,72 +97,76 @@ const div = document.getElementById("widget");
 document.body.removeChild(div); // detached
 window._divRef = div; // now memory can't be freed
 ```
-
-Detached nodes should be released — or the memory won’t be.
+In this code snippet, a DOM node is removed from the document body but a reference to it is maintained in a global variable. This prevents the garbage collector from freeing up the memory occupied by the node, thus causing a memory leak.
 
 ---
 
 ### 5. React State or Context Growth
 
-Holding onto large arrays/objects in `useState` or `useContext` long-term can prevent GC.
+If large arrays or objects are held onto in `useState` or `useContext` in the long term, it can prevent garbage collection and lead to memory leaks.
 
 ---
 
-## DevTools Detection
+## Detecting Memory Leaks Using DevTools
 
-1. Chrome DevTools → Memory → Heap Snapshot
-2. Take snapshot → perform action → take another snapshot
-3. Compare retained nodes, DOM references, listeners
+Several tools can help you detect memory leaks. A common approach is to use the Chrome DevTools:
 
-Use `console.memory`, `performance.memory`, and Chrome’s `Detached DOM` insights.
+1. Navigate to Chrome DevTools → Memory → Heap Snapshot
+2. Take a snapshot, perform an action, and then take another snapshot
+3. Compare the two snapshots to see any retained nodes, DOM references, and listeners
+
+You can also use `console.memory`, `performance.memory`, and Chrome’s `Detached DOM` insights.
 
 ---
 
 ## Real-World Examples
 
+Let's explore some real-world examples of memory leaks and how they were managed:
+
 ### Gmail
 
-- Keeps massive DOM trees alive for tabs
-- Uses internal pool + purge logic
+- Gmail keeps massive DOM trees alive for each tab.
+- It uses an internal pool and purge logic to manage memory.
 
 ### VSCode Web
 
-- Reuses editors across tabs to reduce memory cost
-- Releases hidden views aggressively
+- VSCode Web reuses editors across tabs to reduce memory cost.
+- It releases hidden views aggressively to free up memory.
 
 ### Slack
 
-- Event listener detachment bugs caused multi-GB tabs
-- Now aggressively prunes inactive sessions
+- In the past, Slack experienced bugs related to event listener detachment, which caused tabs to consume multiple gigabytes.
+- Now, Slack aggressively prunes inactive sessions to manage memory.
 
 ---
 
 ## Best Practices
 
-- Always clean up in `useEffect` return
-- Use `AbortController` for fetch cancellation
-- Avoid long-lived global state unless necessary
-- Use `WeakMap` / `WeakSet` for cache
-- Be careful with refs that point to heavy structures
+Prevention is better than cure, especially when it comes to memory leaks. Here are some best practices to prevent memory leaks:
+
+- Always clean up in the return function of `useEffect`.
+- Use the `AbortController` for fetch cancellation.
+- Avoid long-lived global state unless absolutely necessary.
+- Use `WeakMap` or `WeakSet` for cache storage.
+- Be careful with references that point to heavy structures.
 
 ---
 
-## Anti-Patterns
+## Anti-Patterns to Avoid
 
-- Forgetting cleanup in `useEffect`
-- Global object that holds all fetched data
-- Not destroying component instances on route change
-- Accumulating children in a `ref` or state without removal
+Here are some anti-patterns that you should avoid to prevent memory leaks:
+
+- Forgetting to clean up in `useEffect`.
+- Maintaining a global object that holds all fetched data.
+- Not destroying component instances on a route change.
+- Accumulating children in a `ref` or state without removal.
 
 ---
 
 ## Conclusion: Free What You Don’t Need
 
-Memory leaks are sneaky.
-
-They don’t yell. They don’t throw errors. But they **quietly consume** your app from the inside.
+Memory leaks are sneaky. They don’t yell. They don’t throw errors. But they quietly consume your application from the inside.
 
 Spot them early. Profile often. Clean up what you create.
 
-Because performance isn’t just about being fast now — it’s about staying fast later.
-
+Remember, performance isn't just about how quick your application is now — it's about ensuring it stays quick in the long run.

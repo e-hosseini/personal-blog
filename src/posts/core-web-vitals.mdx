@@ -1,119 +1,115 @@
 ---
-title: "Core Web Vitals — The Metrics That Matter Most"
-slug: "core-web-vitals"
+title: "In-Depth Analysis of Core Web Vitals: Metrics that Matter Most in Frontend Performance"
+slug: "in-depth-analysis-core-web-vitals"
 category: "Performance"
 tags: ["performance", "core web vitals", "lighthouse", "metrics", "ux"]
-summary: "Understand Google’s Core Web Vitals and why they matter. Learn how to measure, debug, and improve LCP, INP, and CLS for faster, smoother, user-first web experiences."
+summary: "This article provides an in-depth understanding of Google’s Core Web Vitals and explains why they are crucial. We will delve into the metrics - LCP, INP, and CLS, and discuss how to measure, debug, and improve them for a more user-centric web experience."
 publishedAt: "2022-04-22"
 ---
 
-# Core Web Vitals — The Metrics That Matter Most
+# In-Depth Analysis of Core Web Vitals: Metrics That Matter Most in Frontend Performance
 
-Frontend performance used to mean page load time. But in a world of dynamic apps, SPAs, and rich interactions, page load is only the beginning.
+The concept of frontend performance has evolved beyond just the page load time. In the era of dynamic applications, Single Page Applications (SPAs), and rich user interactions, the speed of page loading is merely the first step.
 
-What really matters is **how fast it feels**.
+The primary concern is the perceived speed or **how fast the web application feels to the user**.
 
-That’s why Google introduced **Core Web Vitals** — a focused set of real-user metrics that quantify user experience in terms of:
-- How **fast** content appears
-- How **responsive** the UI is to interaction
-- How **stable** the layout is as the page loads
+Google introduced **Core Web Vitals** to address this concern. These metrics quantify user experience based on:
+- The **speed** at which the content appears
+- The **responsiveness** of the interface to user interaction
+- The **stability** of the layout as the page loads
 
-They’re not just guidelines. Since 2021, they’re part of Google’s search ranking algorithm.
+Since 2021, these metrics have become a part of Google's search ranking algorithm, making them more than just guidelines. 
 
-In this article, you’ll explore:
-- What the Core Web Vitals are
-- How they work and what good scores look like
-- Tools and methods to measure them
-- Optimization strategies to hit the benchmarks
-- How top companies are winning with Core Web Vitals
+In this article, we will delve into:
+- The Core Web Vitals and their importance
+- The working mechanism of these metrics and what constitutes good scores
+- Tools and methodologies to measure these metrics
+- Strategies for optimizing performance to meet the benchmarks
+- Case studies of top companies leveraging Core Web Vitals
 
 ---
 
-## Overview of the Core Web Vitals
+## An In-depth Look at Core Web Vitals
+
+The Core Web Vitals include:
 
 | Metric | What it measures | Good threshold |
 |--------|------------------|----------------|
-| **LCP** (Largest Contentful Paint) | Time to render the largest visible content | < 2.5s |
+| **LCP** (Largest Contentful Paint) | Time taken to render the largest visible content | < 2.5s |
 | **INP** (Interaction to Next Paint) | Delay between user interaction and UI update | < 200ms |
-| **CLS** (Cumulative Layout Shift) | Visual stability and jank during load | < 0.1 |
+| **CLS** (Cumulative Layout Shift) | Visual stability during load | < 0.1 |
 
-These are measured in the **field** — using real user interactions and devices.
+These metrics are measured in the **field**, meaning they capture real user interactions on actual devices, providing a realistic reflection of the user experience.
 
 ---
 
 ## 1. LCP — Largest Contentful Paint
 
-LCP tracks how long it takes for the **main content** (hero image, title, article body) to appear.
+Largest Contentful Paint (LCP) metric is a key indicator of perceived load speed. It measures the time it takes for the browser to render the largest content element visible in the viewport. This could be a block of text, an image, or a video poster. 
 
-A slow LCP means users stare at an empty shell.
+A high LCP value implies users are staring at a blank or partially loaded screen for longer, which is a poor user experience.
 
 ### Typical Causes of Poor LCP
-- Render-blocking CSS and JS
-- Uncompressed or lazy-loaded hero images
-- Large font files loading late
-- Slow server responses
+- **Render-blocking JavaScript and CSS**: These block the rendering of the page until they are loaded and parsed.
+- **Slow server response times**: This can be due to server location, server quality, or high traffic.
+- **Resource load times**: Resources such as images, videos, or large JS files can take a long time to download.
+- **Client-side rendering**: JS frameworks can cause significant delays before they become interactive.
 
 ### Optimization Techniques
-- Serve **critical CSS inline**
-- Preload fonts and key images
-- Use responsive formats like WebP or AVIF
-- Use `priority` hints (`<link rel="preload">`)
-- Deploy edge functions or SSR for fast TTFB
+- **Inline critical CSS**: This eliminates the need for the browser to fetch this CSS before rendering the page.
+- **Preload important resources**: Using the `rel=preload` directive, resources can be loaded as soon as possible.
+- **Compress text files**: Use Gzip or Brotli to reduce the size of text-based assets.
+- **Minimize client-side JS**: Less JS means less to parse and execute, improving LCP times.
 
 ---
 
-## 2. INP — Interaction to Next Paint (Replaces FID)
+## 2. INP — Interaction to Next Paint
 
-**INP** measures the latency between a user action (tap, click, keypress) and the next paint.
-
-Unlike FID (First Input Delay), which only tracks the **first** interaction, INP captures **all interactions** over the page lifetime — and reports the **worst-case**.
+Interaction to Next Paint (INP) measures the delay between a user interaction and the subsequent paint event. Unlike First Input Delay (FID), which only considers the first interaction, INP captures all interactions over the page's lifetime and reports the worst-case scenario.
 
 ### Causes of High INP
-- JS blocking the main thread
-- Expensive renders after state changes
-- Debounced handlers with visual lag
-- Event delegation delays
+- **Long tasks**: Any task that blocks the main thread for 50 ms or more can delay input response.
+- **JavaScript execution time**: The longer a browser spends executing JS, the longer it takes to respond to user interactions.
+- **Render-blocking resources**: These resources can delay the first paint of a page.
 
-### How to Improve INP
-- Offload non-critical JS (e.g. analytics)
-- Use `startTransition()` for low-priority state updates
-- Split large render trees
-- Optimize `useEffect`, `useMemo`, and component memoization
+### Techniques to Improve INP
+- **Break up Long Tasks**: Splitting long tasks into smaller, asynchronous tasks allows the page to remain responsive.
+- **Optimize page for interaction readiness**: This can involve different code-splitting strategies, like breaking up code by route or component type.
+- **Use a web worker**: Offload tasks to a background thread using a web worker.
+- **Reduce JavaScript execution time**: Minimize the amount of JS that needs to be processed on page load.
 
 ---
 
 ## 3. CLS — Cumulative Layout Shift
 
-CLS measures how much visible content shifts **unexpectedly** while the page loads or during interaction.
-
-Even tiny movements hurt perception.
+Cumulative Layout Shift (CLS) measures the amount of unexpected layout shift of visible page content. It helps quantify how often users experience unexpected layout shifts.
 
 ### What Triggers CLS
-- Images or iframes without `width`/`height`
-- Injecting content (ads, banners) late
-- Fonts causing reflow
-- Buttons moving after load due to dynamic content
+- **Images without dimensions**: Always include width and height size attributes on your images and video elements.
+- **Ads, embeds, and iframes without dimensions**: All embeds should have a reserved space.
+- **Web Fonts causing FOIT/FOUT**: Flash of invisible text (FOIT) and flash of unstyled text (FOUT) can both contribute to CLS.
+- **Actions waiting for a network response before updating DOM**: It can cause elements to shift unexpectedly.
 
 ### How to Prevent CLS
-- Set explicit dimensions on all media
-- Use `aspect-ratio` or placeholder space
-- Avoid inserting DOM above already rendered content
-- Use `font-display: swap` for font fallback
+- **Use CSS aspect ratio boxes**: This will reserve the correct amount of space for an element until it loads.
+- **Avoid inserting new content above existing content**: Except in response to user interaction.
+- **Animate transitions**: Provide a smoother experience by animating transitions between states.
+- **Optimize font loading**: Choose `font-display: optional` for fonts to reduce layout shifts.
 
 ---
 
 ## How to Measure Core Web Vitals
 
+You can measure Core Web Vitals using various tools. Some of these tools simulate user interactions in a lab environment, while others capture data from real users, providing a more accurate reflection of performance in the real world.
+
 ### Lab Tools (Simulated)
-- Lighthouse in Chrome DevTools
-- WebPageTest
-- PageSpeed Insights
+- **Lighthouse**: A part of Chrome DevTools, Lighthouse provides a comprehensive performance report, including Core Web Vitals.
+- **WebPageTest**: This online tool offers advanced testing capabilities and provides a detailed performance report.
+- **PageSpeed Insights**: Powered by Lighthouse, PageSpeed Insights analyzes the content of a web page and generates suggestions to make it faster.
 
 ### Field Tools (Real Users)
-- CrUX (Chrome User Experience Report)
-- `web-vitals` npm package
-- Vercel / Netlify Analytics
-- SpeedCurve, Calibre, Raygun
+- **Chrome User Experience Report (CrUX)**: A public dataset of real user experience data on millions of websites.
+- **`web-vitals` JavaScript library**: This library provides a set of functions to measure each of the Core Web Vitals.
 
 ```js
 import { getLCP, getCLS, getINP } from 'web-vitals';
@@ -123,55 +119,55 @@ getCLS(console.log);
 getINP(console.log);
 ```
 
+The above code snippet uses the `web-vitals` library to log the LCP, CLS, and INP metrics to the console.
+
 ---
 
 ## Real-World Examples
 
+Let's look at how some of the top companies are leveraging Core Web Vitals.
+
 ### Google Docs
-- Prioritizes visible text and controls
-- Partial hydration strategy to reduce JS blocking
-- Aggressive preloading for fonts and input handling
+Google Docs optimizes its performance by prioritizing the visibility of text and controls. It uses a partial hydration strategy to reduce JavaScript blocking. It also employs aggressive preloading for fonts and input handling to optimize LCP and INP.
 
 ### Shopify
-- Uses preconnect and preload heavily on storefronts
-- Blocks heavy hydration until LCP is completed
+Shopify uses `preconnect` and `preload` heavily on their storefronts to speed up the loading of assets. They also ensure heavy JavaScript hydration is blocked until LCP is completed, mitigating any impact on this crucial metric.
 
 ### Airbnb
-- Skeleton loading strategy prevents CLS
-- Scroll performance focus to maintain INP on filters/maps
+Airbnb uses a skeleton loading strategy to prevent layout shifts, thereby optimizing CLS. They also focus on scroll performance to maintain good INP scores on their filters and maps.
 
 ---
 
 ## Continuous Optimization
 
-- Run Lighthouse in CI
-- Monitor with RUM tools over time
-- Set budgets for INP, LCP, and CLS in your build pipeline
-- Test across devices — real-world performance ≠ dev machine
+Performance optimization is not a one-time task but a continuous process. Here are some practices to ensure continuous performance optimization:
+
+- **Run Lighthouse in CI**: This helps catch performance regressions before they reach production.
+- **Monitor with Real User Monitoring (RUM) tools over time**: This provides insights into how actual users are experiencing the site.
+- **Set performance budgets for LCP, INP, and CLS in your build pipeline**: This ensures that performance doesn't regress over time.
+- **Test across a variety of devices**: Performance on a high-end desktop can be very different from performance on a mid-tier mobile device.
 
 ---
 
 ## Anti-Patterns
 
-- Rendering entire UI after JS hydration (hurts LCP)
-- Lazy-loading everything (hurts LCP & INP)
-- Styling layout after data load (hurts CLS)
-- Large, single-threaded event handlers (hurts INP)
+While you work on optimizing your website, it's important to avoid certain anti-patterns that can negatively affect Core Web Vitals:
+
+- **Rendering the entire UI after JavaScript hydration**: This can significantly delay LCP.
+- **Lazy-loading all assets**: This can cause delays in LCP and INP as assets may not be available when the user needs them.
+- **Styling layout after data load**: This can lead to layout shifts, negatively impacting CLS.
+- **Large, single-threaded event handlers**: These can block the main thread, increasing INP.
 
 ---
 
 ## Conclusion: Metrics With Meaning
 
-Core Web Vitals measure what users actually experience — not what your CI thinks is fast.
+Core Web Vitals provide a way to measure real-world user experiences on the web. They help you optimize:
 
-They help you prioritize:
-- **What they see** (LCP)
-- **What they feel** (INP)
-- **What they trust** (CLS)
+- **What users see** (LCP)
+- **What users feel** (INP)
+- **What users trust** (CLS)
 
-Because performance isn’t about benchmarks — it’s about **people**.
+Performance is not just about meeting benchmarks — it's about providing a smooth, enjoyable experience for the user. Measure it, monitor it, and continually optimize it.
 
-Measure it. Monitor it. Optimize it.
-
-And make your experience not just fast — but **delightfully fast**.
-
+Strive not just for fast, but for **delightfully fast** experiences.

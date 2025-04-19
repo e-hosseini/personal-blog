@@ -1,0 +1,240 @@
+---
+title: "Filtering and Sorting — Building Flexible and Performant APIs"
+slug: "api-filtering-sorting"
+category: "Back end APIs"
+tags: ["filtering", "sorting", "api", "query parameters", "design patterns", "graphql", "rest"]
+summary: "A comprehensive deep dive into filtering and sorting in APIs. Explore strategies, syntax conventions, scalability challenges, performance tips, and real-world implementation patterns across REST and GraphQL."
+publishedAt: "2022-02-04"
+---
+
+# Filtering and Sorting — Building Flexible and Performant APIs
+
+Imagine building a product search for an e-commerce site, a user directory for an enterprise dashboard, or an issue tracker for a DevOps tool. The first thing users expect? The ability to **filter** and **sort** results.
+
+And yet, filtering and sorting logic — across APIs — is often inconsistent, fragile, or poorly documented.
+
+In this article, we’ll explore filtering and sorting from first principles: why it’s hard, how it evolved, best practices across REST and GraphQL, and how real products like Shopify, GitHub, and Stripe implement it. We’ll cover syntax design, schema modeling, indexing concerns, and defensive coding — to help you build flexible, performant, and developer-friendly APIs.
+
+---
+
+## Historical Context and Motivation
+
+In early API designs (2000s), REST endpoints were often rigid:
+
+```http
+GET /users
+GET /users/active
+GET /users/recently-created
+```
+
+Each filter or sort required a **new route**, increasing surface area and fragmenting logic.
+
+As apps grew more dynamic, API teams needed more **composable, queryable** interfaces — without exploding the number of endpoints. This gave rise to:
+- Query string parameters in REST (`?filter=name&sort=-createdAt`)
+- Structured arguments in GraphQL
+- Declarative query objects in Firebase, Firestore, and MongoDB
+
+Today, flexible filtering/sorting is table stakes for modern APIs — especially those powering dashboards, analytics, catalogs, feeds, and search.
+
+---
+
+## REST Filtering Patterns
+
+There’s no strict spec for filtering in REST, but common conventions include:
+
+### Basic Key-Value Filters
+
+```http
+GET /products?category=shoes&brand=Nike
+```
+
+### Range Queries
+
+```http
+GET /products?price[gte]=50&price[lte]=100
+```
+
+### In/Not In Lists
+
+```http
+GET /users?status=in(active,pending)
+```
+
+Or:
+
+```http
+GET /users?status=active&status=pending
+```
+
+### Nested/Relational
+
+```http
+GET /orders?customer.name=John&total[gt]=100
+```
+
+💡 Tip: Use a consistent prefix (`filter[...]`) to avoid param pollution:
+```http
+GET /products?filter[price][gte]=20&filter[category]=electronics
+```
+
+---
+
+## REST Sorting Conventions
+
+Sorting typically looks like:
+
+```http
+GET /products?sort=-price,+name
+```
+
+Where:
+- `-price` means descending
+- `+name` (or just `name`) means ascending
+
+💡 You can also support:
+- Multiple fields (with fallback)
+- Default sorts (e.g., `createdAt DESC`)
+- Custom aliases (`relevance`, `popular`, `trending`)
+
+Always document the available fields and directions — and reject unsupported fields with clear errors.
+
+---
+
+## GraphQL Filtering and Sorting
+
+In GraphQL, filtering is usually done via structured input types:
+
+```graphql
+query {
+  products(filter: {
+    category: "books",
+    price: { gte: 10, lte: 50 }
+  }, sort: {
+    field: "rating",
+    direction: DESC
+  }) {
+    id
+    title
+    price
+  }
+}
+```
+
+Many teams define reusable types:
+
+```graphql
+input ProductFilter {
+  category: String
+  brand: String
+  price: RangeFilter
+  rating: RangeFilter
+}
+
+input RangeFilter {
+  gte: Float
+  lte: Float
+}
+```
+
+Sorting types:
+
+```graphql
+input SortInput {
+  field: String
+  direction: SortDirection
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+```
+
+---
+
+## Real-World Examples
+
+### Shopify
+
+Shopify's Storefront API lets you filter collections with GraphQL filters (`first`, `query`, `sortKey`). Their REST admin API uses structured query parameters and supports dozens of filter types.
+
+### Stripe
+
+Stripe’s API supports highly flexible filters for invoices, payments, and customers. Example:
+
+```http
+GET /v1/invoices?customer=cus_123&status=paid&created[gte]=1680000000
+```
+
+Internally, Stripe parses and validates every filter parameter against a known schema — making their API robust and secure.
+
+### GitHub
+
+GitHub’s GraphQL API enables compound filters on issues, pull requests, repos, and users — using full type-safe query definitions and powerful `filter` objects.
+
+---
+
+## Backend Schema Design
+
+When designing filters, consider:
+
+- Which fields are safe and performant to filter on?
+- Can you expose raw DB columns? Or should you alias them?
+- Do filters map directly to SQL clauses? Or require transformation?
+
+**Example: SQL-safe filter parser (PostgreSQL)**
+
+```sql
+WHERE
+  category = $1 AND
+  price >= $2 AND
+  price <= $3
+ORDER BY created_at DESC
+LIMIT $4 OFFSET $5
+```
+
+Indexing is key. Use `EXPLAIN ANALYZE` to test the performance of filtered queries — especially when combining filters with sorts.
+
+---
+
+## Frontend Considerations
+
+- Always show **active filters** to the user
+- Allow filters to be changed without full reload (React Query, SWR, Apollo)
+- Store filters in query string or global state (Zustand, Redux)
+- Use dropdowns, pills, chips, toggles — but preserve **semantic URL state**
+- Disable sort options when fields aren't available (e.g. can’t sort by `price` if no price filter active)
+
+---
+
+## Testing and Validation
+
+- Test for bad filters (`sort=abcxyz`)
+- Validate data types (`gte=abc`)
+- Enforce filter whitelisting to prevent injection
+- Write integration tests with deep combinations (status + date + price + search)
+
+---
+
+## Anti-Patterns to Avoid
+
+- Mixing filters and unrelated query params (`&debug=true&filter=name`)
+- Exposing raw SQL columns or data model fields
+- Allowing unlimited unindexed fields in filters
+- Making sort fields behave inconsistently (`name` sorts a string, but `price` fails)
+
+---
+
+## Conclusion: Filters Are APIs, Not Just UX
+
+Filtering and sorting aren’t optional — they’re **core parts of your API contract**. They shape the performance of every query, the experience of every user, and the safety of your backend under load.
+
+Design them deliberately:
+- Type your filters
+- Document everything
+- Validate aggressively
+- And always benchmark the impact
+
+Good filters empower developers. Great filters scale the product.
+
+Build both.

@@ -1,65 +1,73 @@
 ---
-title: "CSRF — Cross-Site Request Forgery Explained"
+title: "A Deep Dive into CSRF — Cross-Site Request Forgery"
 slug: "security-csrf"
 category: "Security"
 tags: ["security", "csrf", "tokens", "origin", "same-site"]
-summary: "Cross-Site Request Forgery (CSRF) tricks authenticated users into executing unwanted actions. Learn how to prevent CSRF with tokens, SameSite cookies, and origin checks."
+summary: "Cross-Site Request Forgery (CSRF) is a complex yet potent attack that manipulates user actions, not mere input. This article provides an in-depth understanding of CSRF, how to prevent attacks using techniques like tokens, SameSite cookies, and origin checks, and how to test for vulnerabilities."
 publishedAt: "2023-01-06"
----
-
-# CSRF — Cross-Site Request Forgery Explained
-
-CSRF (Cross-Site Request Forgery) is a subtle, yet dangerous attack that targets user **actions**, not just input.
-
-It works like this:
-- You’re logged into a banking site
-- You visit a malicious site in another tab
-- That site sends a **forged request** to your bank — using your session cookies
-- The bank executes the request because it’s from a “logged-in” user
-
-That’s CSRF — and it’s exploited more often than you’d think.
 
 ---
 
-## Real-World Example
+# A Deep Dive into CSRF — Cross-Site Request Forgery
 
-### The Samy Worm (again)
+At its core, CSRF (Cross-Site Request Forgery) is a type of web attack that deceives authenticated users into performing actions they did not intend. It exploits the trust that a site has in a user's browser by utilizing the user's credentials to perform malicious activities.
 
-Samy’s MySpace worm from the XSS example? It also included CSRF:
-- Logged-in users' credentials were used to auto-friend Samy
-- The browser sent valid MySpace cookies with the request
-- MySpace had no CSRF protection — the POST worked
+Let's break down the mechanics of a CSRF attack:
+1. The user logs into a trusted site, such as a bank website.
+2. In another tab, the user innocently visits a malicious site.
+3. The malicious site sends a forged request to the bank, leveraging the user’s session cookies.
+4. The bank treats the request as authentic since it appears to come from a logged-in user and executes it.
 
-Result: over 1 million users were affected in 24 hours.
-
----
-
-## What Makes CSRF Possible?
-
-- **Session cookies** are automatically sent by the browser with requests
-- Malicious pages can trigger:
-  - `<img src="https://bank.com/transfer?amount=10000">`
-  - `<form method="POST" action="https://bank.com/transfer">`
-
-Even though these pages are **not from the same origin**, the cookies are included.
+This sequence of events is a CSRF attack, and it occurs more frequently than one might expect.
 
 ---
 
-## Common CSRF Vectors
+## Real-World Example: The Samy Worm
 
-- HTML forms
-- Image tags
-- Hidden iframes
-- XHR/fetch with bad CORS config
-- Auto-submitting JS payloads
+One of the most famous instances of CSRF is the Samy worm. This worm exploited both XSS (Cross-Site Scripting) and CSRF vulnerabilities in MySpace:
+- The worm used the credentials of logged-in MySpace users to automatically send Samy friend requests.
+- The victims' browsers forwarded valid MySpace cookies along with the request.
+- MySpace lacked CSRF protection, so the POST request succeeded.
+
+This led to over a million users being affected in less than 24 hours.
 
 ---
 
-## Defending Against CSRF
+## Underlying Factors Enabling CSRF Attacks
+
+There are two critical factors that make CSRF attacks possible:
+1. The automatic sending of **session cookies** by the browser with requests. This behavior is a fundamental feature of HTTP, designed to maintain state in the inherently stateless protocol.
+2. The ability of malicious pages to trigger requests to other sites, with those requests automatically including the session cookies of the targeted site. This can be done through various means like HTML forms, image tags, or JavaScript fetch requests.
+
+For example, a malicious site could include an image tag or a form that points to the bank's transfer endpoint:
+
+```html
+<img src="https://bank.com/transfer?amount=10000">
+<form method="POST" action="https://bank.com/transfer">
+```
+
+Despite these requests originating from a different site, the browser still includes the user's cookies for the bank site because they match the request's destination. This is the crux of CSRF attacks, leveraging the automatic inclusion of cookies in requests to perform unwanted actions.
+
+---
+
+## Common CSRF Attack Vectors
+
+CSRF attacks can be initiated in several ways:
+- **HTML forms**: A malicious site can host a form that points to the victim site's sensitive endpoints. This form can be auto-submitted using JavaScript, triggering the attack when the page loads.
+- **Image tags**: By setting the `src` attribute to a sensitive URL on the victim site, the browser is tricked into performing a GET request to that URL.
+- **Hidden iframes**: A hidden iframe can load a page from the victim site, possibly triggering side effects.
+- **XHR/fetch with incorrect CORS configuration**: If Cross-Origin Resource Sharing (CORS) is misconfigured, it can allow requests from foreign sites, leading to CSRF.
+- **Auto-submitting JavaScript payloads**: JavaScript can be used to build and submit forms, triggering POST requests to sensitive endpoints.
+
+---
+
+## Defending Against CSRF Attacks
+
+There are several strategies for defending against CSRF attacks:
 
 ### 1. CSRF Tokens
 
-Generate a **random token** server-side and include it in all state-changing requests.
+One of the most common defenses is the usage of CSRF tokens. A CSRF token is a random value that is generated on the server side and included in every state-changing request. Consider the following example:
 
 ```html
 <form action="/update-email" method="POST">
@@ -67,98 +75,96 @@ Generate a **random token** server-side and include it in all state-changing req
 </form>
 ```
 
-The server checks that:
-- The token exists
-- It matches the session/user
-- It’s not expired
+In this case, the server ensures:
+- The token exists in the request.
+- The token matches the one associated with the user's session.
+- The token has not expired.
+
+If any of these checks fail, the request is denied. This strategy works because while a CSRF attack can cause the victim's browser to send requests with its cookies, it cannot access the CSRF token stored in the victim's page.
 
 ### 2. SameSite Cookies
 
-Set your cookies like:
+The SameSite cookie attribute is a powerful tool against CSRF attacks. By setting the SameSite attribute to either `Strict` or `Lax`, you can control when cookies are sent:
 
-```
-Set-Cookie: session=abc; SameSite=Lax; Secure
-```
+- `SameSite=Strict`: Cookies are only sent in requests originating from the same site.
+- `SameSite=Lax`: Cookies are sent with top-level navigation and with GET requests originating from the same site.
+- `SameSite=None`: Cookies will be sent with all requests, even cross-origin ones. This should only be used with the `Secure` attribute and for specific cross-origin use cases.
 
-- `SameSite=Strict`: Only sends cookie from same-origin
-- `SameSite=Lax`: Sends on top-level GET (safe for most sites)
-- `SameSite=None`: Only used with `Secure` and cross-origin APIs
-
-This blocks most drive-by form/image CSRF attacks.
+By using `SameSite=Strict` or `SameSite=Lax`, you can prevent most CSRF attacks as the cookies needed for the attack will not be included in requests originating from other sites.
 
 ### 3. Check Origin and Referer Headers
 
-Only allow state changes if:
+Another way to protect against CSRF attacks is to check the Origin and Referer headers of incoming requests:
 
 ```http
 Origin: https://yourdomain.com
 Referer: https://yourdomain.com/settings
 ```
 
-This mitigates CSRF in cases where tokens aren't available.
+By confirming that these headers match the expected values, you can ensure that the request originated from your domain. This is especially useful when CSRF tokens can't be used, such as in sites with high caching requirements.
 
 ---
 
-## CSRF in SPAs and APIs
+## CSRF in Single Page Applications (SPAs) and APIs
 
-SPAs often use tokens (JWT) instead of cookies — which makes CSRF **less of an issue**.
+Single Page Applications (SPAs) often use token-based authentication (such as JWT - JSON Web Tokens) instead of cookies, which inherently mitigates CSRF attacks since the tokens are not automatically included in requests by the browser.
 
-However:
-- If your SPA uses **cookie-based auth**, you still need CSRF protection
-- Combine **SameSite cookies** with **CSRF headers or tokens**
+However, if your SPA does use cookie-based authentication, you still need to guard against CSRF attacks. One common strategy is to combine SameSite cookies with CSRF headers or tokens.
 
 ---
 
 ## CSRF in the Wild
 
+Many popular web platforms employ CSRF protections:
+
 ### GitHub
 
-- Uses CSRF tokens on all non-GET forms and AJAX calls
-- Enforces `SameSite=Lax` on session cookies
+GitHub uses CSRF tokens for all non-GET forms and AJAX calls. They also enforce `SameSite=Lax` on session cookies to prevent CSRF attacks.
 
 ### Django
 
-- Automatic CSRF token injection in templates
-- Middleware to reject requests without valid token
+Django provides built-in CSRF protection with automatic token injection in templates and middleware to reject requests without a valid token.
 
 ### Stripe Dashboard
 
-- Authenticated dashboards with strict CSRF controls on all POSTs
+Stripe's authenticated dashboards feature strict CSRF controls on all POST requests, ensuring only legitimate user actions are processed.
 
 ---
 
 ## Anti-Patterns
 
-- Accepting all POST/PUT/DELETE without origin check
-- Storing auth tokens in cookies with `SameSite=None` and no CSRF token
-- Not validating CSRF token expiration
-- Misconfiguring CORS to allow credentials from `*`
+There are several practices that can inadvertently increase your vulnerability to CSRF attacks:
+
+- Accepting all POST/PUT/DELETE requests without checking the origin.
+- Storing authentication tokens in cookies with `SameSite=None` and without a CSRF token.
+- Not validating the expiration of CSRF tokens. Expired tokens should be rejected to prevent attacks using old tokens.
+- Misconfiguring CORS to allow credentials from any origin (`*`), which can lead to CSRF attacks.
 
 ---
 
-## Testing CSRF
+## Testing for CSRF Vulnerabilities
 
-Use tools like:
+To ensure your site is secure against CSRF attacks, you can use a variety of tools, including:
+
 - Burp Suite
-- Postman (manually forge requests)
+- Postman
 - Tamper Chrome
 - OWASP ZAP
 
-Try to:
-- Submit a POST without the correct token
-- Change cookie origin and replay requests
-- Upload an iframe that performs a destructive action
+These tools allow you to manually forge requests, change cookie origins, and replay requests to test your site's defenses. Some things to try include:
+
+- Submitting a POST request without the correct CSRF token.
+- Changing the cookie's origin and replaying requests.
+- Uploading an iframe that performs a destructive action.
 
 ---
 
 ## Conclusion: Authenticate the Intent
 
-XSS hijacks user **input**. CSRF hijacks their **actions**.
+While XSS attacks exploit user input, CSRF attacks exploit user actions. To defend against CSRF attacks, you need to ensure that every sensitive POST, PUT, or DELETE request:
 
-Make sure that every sensitive POST, PUT, or DELETE:
-- Comes from your domain
-- Has an intent-verifying token
-- Fails safely if tampered
+- Originates from your domain.
+- Includes a token that verifies the user's intent.
+- Fails safely if any tampering is detected.
 
-Because security isn’t just about what users say — it’s about what they meant to say.
-
+Remember, web security isn't just about verifying what users say — it's about verifying what they intend to do.

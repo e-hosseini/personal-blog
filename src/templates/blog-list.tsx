@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, graphql } from 'gatsby';
 import Layout from '../components/layout';
-import { StaticImage } from 'gatsby-plugin-image';
+import Topic from '../components/Topic';
 
 // Import the constant from gatsby-node.js
 const POSTS_PER_PAGE = 10;
@@ -21,7 +21,6 @@ interface BlogListTemplateProps {
           slug: string;
         };
       }>;
-      totalCount: number;
     };
   };
   pageContext: {
@@ -33,69 +32,51 @@ interface BlogListTemplateProps {
 }
 
 const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }) => {
-  const posts = data.allMdx.nodes;
-  const { currentPage, numPages, limit, skip } = pageContext;
-
-  // Debug logging
-  console.log('Pagination Debug:', {
-    currentPage,
-    numPages,
-    limit,
-    skip,
-    totalPosts: data.allMdx.totalCount,
-    currentPosts: posts.length,
-    shouldShowPagination: numPages > 1
-  });
+  const { nodes: posts } = data.allMdx;
+  const { currentPage, numPages } = pageContext;
 
   const isFirst = currentPage === 1;
   const isLast = currentPage === numPages;
   const prevPage = currentPage - 1 === 1 ? '/articles' : `/articles/page/${currentPage - 1}`;
   const nextPage = `/articles/page/${currentPage + 1}`;
 
-  // Always show pagination if there are multiple pages
-  const showPagination = numPages > 1;
-
   return (
     <Layout
       title={`Articles${currentPage > 1 ? ` - Page ${currentPage}` : ''}`}
-      description="Articles about software engineering, web development, and technology."
+      description="Browse all articles"
     >
-      <div className="max-w-4xl mx-auto px-4 py-8">
-  
-        <h2 className="text-4xl font-bold mb-8">Articles</h2>
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-montserrat font-medium mb-8">Articles</h1>
         
-        <div className="space-y-8">
+        <div className="space-y-6">
           {posts.map((post) => (
-            <article key={post.id} className="bg-white p-6 rounded-lg shadow-sm">
-              <Link to={`/${post.fields.slug}`} className="block">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{post.frontmatter.title}</h2>
-                <div className="flex items-center text-gray-600 mb-4">
-                  <span className="mr-4">{post.frontmatter.publishedAt}</span>
-                  <span className="px-2 py-1 bg-gray-200 rounded-full text-sm">
+            <article key={post.id} className="border-b border-gray-100 pb-6">
+              <Link to={post.fields.slug} className="block">
+                <h2 className="text-xl font-montserrat font-medium text-gray-900 mb-2">{post.frontmatter.title}</h2>
+                <div className="flex items-center text-sm text-gray-500 mb-3">
+                  <span className="mr-3">{post.frontmatter.publishedAt}</span>
+                  <div className="flex flex-wrap gap-1">
                     {post.frontmatter.tags.map((tag) => (
-                      <Link
+                      <Topic
                         key={tag}
-                        to={`/tags/${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="mr-2 hover:text-blue-600"
-                      >
-                        {tag}
-                      </Link>
+                        tag={tag}
+                      />
                     ))}
-                  </span>
+                  </div>
                 </div>
-                <p className="text-gray-700">{post.frontmatter.summary}</p>
+                <p className="text-gray-600 text-sm">{post.frontmatter.summary}</p>
               </Link>
             </article>
           ))}
         </div>
 
-        {showPagination && (
+        {numPages > 1 && (
           <nav className="mt-12 flex justify-between items-center">
             {!isFirst && (
               <Link
                 to={prevPage}
                 rel="prev"
-                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900 hover:shadow-md transition-all"
+                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900"
               >
                 ← Previous Page
               </Link>
@@ -108,7 +89,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
                   className={`mx-1 px-3 py-1 rounded-lg ${
                     currentPage === i + 1
                       ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   {i + 1}
@@ -119,7 +100,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
               <Link
                 to={nextPage}
                 rel="next"
-                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900 hover:shadow-md transition-all"
+                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900"
               >
                 Next Page →
               </Link>
@@ -132,14 +113,13 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
 };
 
 export const query = graphql`
-  query BlogListQuery($skip: Int!, $limit: Int!) {
+  query($skip: Int!, $limit: Int!) {
     allMdx(
       sort: { frontmatter: { publishedAt: DESC } }
-      filter: { internal: { contentFilePath: { regex: "/src/posts/" } } }
       limit: $limit
       skip: $skip
+      filter: { internal: { contentFilePath: { regex: "/src/posts/" } } }
     ) {
-      totalCount
       nodes {
         id
         frontmatter {

@@ -1,0 +1,193 @@
+---
+title: "Render Props — Composable Logic Through JSX Functions"
+slug: "render-props"
+category: "Component APIs"
+tags: ["render props", "react", "composition", "patterns", "component apis"]
+summary: "Explore the render props pattern in depth — how it enables logic reuse through function-as-child components. See how it evolved, why it's powerful, and where it fits in the modern React ecosystem alongside hooks and context."
+publishedAt: "2022-11-25"
+---
+
+# Render Props — Composable Logic Through JSX Functions
+
+The **render props** pattern changed how we think about composition in React. Before hooks, before context API improvements, render props were the primary way to **reuse logic between components** without inheritance or HOCs.
+
+A render prop is a component prop whose value is a function. Instead of rendering static JSX, a component calls this function, passing in values — such as state, events, or computed data — and lets the **consumer decide what to render**.
+
+This pattern makes component APIs **highly flexible** and **inversion-of-control friendly**. But it also comes with tradeoffs.
+
+In this deep technical breakdown, we’ll look at:
+- What render props are and how they work
+- Why they exist and what problems they solve
+- Alternatives (hooks, HOCs, slots)
+- Real-world use cases
+- Gotchas around performance and readability
+
+---
+
+## What Is a Render Prop?
+
+A **render prop** is a function provided as a child or prop to a component that returns JSX.
+
+```tsx
+<MyComponent>
+  {(data) => <div>{data.value}</div>}
+</MyComponent>
+```
+
+Or as a named prop:
+
+```tsx
+<MyComponent render={({ value }) => <span>{value}</span>} />
+```
+
+The component owning the state or behavior simply **calls this function**, passing in the relevant arguments.
+
+---
+
+## Why It Exists: The Composition Problem
+
+Early React patterns struggled with code reuse:
+- Inheritance didn’t scale
+- Mixins were error-prone
+- HOCs caused prop conflicts and were hard to type
+
+Render props gave developers a way to **delegate rendering** to consumers while encapsulating behavior.
+
+It solved:
+- Reusability: Share logic across components
+- Flexibility: Let consumers choose UI
+- Composition: Combine components functionally
+
+---
+
+## Anatomy of a Render Prop Component
+
+Here’s a simplified version of a `MouseTracker` component:
+
+```tsx
+function MouseTracker({ children }) {
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const move = (e) => setCoords({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  return children(coords);
+}
+```
+
+Usage:
+
+```tsx
+<MouseTracker>
+  {({ x, y }) => <div>Mouse at ({x}, {y})</div>}
+</MouseTracker>
+```
+
+The behavior (tracking) is encapsulated. The **presentation** is delegated.
+
+---
+
+## Real-World Use Cases
+
+### Tooltips and Popovers
+
+```tsx
+<Popover>
+  {({ isOpen, toggle }) => (
+    <>
+      <button onClick={toggle}>Toggle</button>
+      {isOpen && <div className="popover">Info</div>}
+    </>
+  )}
+</Popover>
+```
+
+### Form Field Abstraction
+
+```tsx
+<Field name="email">
+  {({ field, meta }) => (
+    <input {...field} className={meta.touched && meta.error ? "error" : ""} />
+  )}
+</Field>
+```
+
+Used in libraries like Formik and React Final Form.
+
+### Authenticated User Context
+
+```tsx
+<AuthProvider>
+  {({ user }) => (
+    <span>Hello, {user.name}</span>
+  )}
+</AuthProvider>
+```
+
+---
+
+## Render Props vs Hooks
+
+Hooks are now the dominant pattern for logic reuse — but render props are still useful when:
+- You want to **control rendering scope** (e.g., animate children)
+- You need a **composable API** for layout
+- You’re working with class components or non-hook-aware libraries
+
+Hooks solve the logic reuse problem better — but they can’t replace render props when **you want to delegate rendering itself**.
+
+---
+
+## Performance Considerations
+
+Render props create **new functions on every render**, which can break `shouldComponentUpdate` or `React.memo`.
+
+Mitigation strategies:
+- Use `React.memo` + stable props
+- Lift render function outside parent render
+- Avoid deeply nested render prop trees (aka “callback hell”)
+
+---
+
+## Patterns That Evolved From Render Props
+
+- **Headless components**: Expose state and behavior via render props or hooks (e.g., Headless UI, Reakit)
+- **Compound components**: Use context to share state, children define structure
+- **Slots (in Web Components/Vue)**: Named content injection, similar to render props but declarative
+
+---
+
+## Famous Examples
+
+- `React Motion` used render props to animate values
+- `Downshift` (autocomplete) used render props to expose full control of dropdown behavior
+- `React Router` supported both static and render-prop-based routes
+
+```tsx
+<Route path="/profile" render={() => <Profile />} />
+```
+
+---
+
+## Anti-Patterns
+
+- Overusing render props for simple values (better passed as props)
+- Nesting render props more than 2-3 levels
+- Inline anonymous functions that hurt performance
+- Mixing multiple render prop styles in the same tree
+
+---
+
+## Conclusion: Controlled Flexibility at Its Best
+
+Render props are a pattern — not a technology. They’re about **inversion of control**, letting consumers define *how*, while providers define *what*.
+
+They paved the way for hooks, headless libraries, and rich composability.
+
+They’re not always the best tool — but when you need rendering **as an argument**, render props are your friend.
+
+Give logic. Let users choose structure.
+
+That’s what great APIs do.

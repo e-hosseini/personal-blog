@@ -1,0 +1,103 @@
+---
+title: "Lazy Loading in State Management — Deferring What You Don’t Need Yet"
+slug: "lazy-loading-state"
+category: "State management"
+tags: ["lazy loading", "performance", "state", "code splitting", "frontend architecture"]
+summary: "A deep dive into lazy loading within the context of state management — why it matters, how to implement it, and how modern apps like Facebook, Amazon, and Notion use it to improve speed and reduce memory overhead."
+publishedAt: "2022-07-29"
+---
+
+# Lazy Loading in State Management — Deferring What You Don’t Need Yet
+
+Lazy loading is usually discussed in the context of images or routes — but it’s just as crucial in **state management**. As frontend applications grow larger, managing memory, performance, and user experience becomes just as important as managing data. Lazy loading lets you **defer the initialization or hydration of state** until it's actually needed.
+
+In large apps, this can be the difference between a fast startup and a frustratingly slow one.
+
+---
+
+## Why It Exists: The Problem with Eager State
+
+Traditional state management solutions like Redux or MobX often initialize global state eagerly — even for features or modules the user may never interact with. This leads to:
+- Unnecessary API calls
+- Preloaded data for unused screens
+- High initial memory footprint
+- Poor cold start performance
+
+Lazy loading was introduced to **modularize state slices**, reduce memory usage, and defer logic execution until explicitly needed — improving both performance and scalability.
+
+---
+
+## How It Works
+
+Lazy loading in state management generally involves:
+- Dynamically registering reducers or stores
+- Initializing atoms/selectors/context only upon first use
+- Combining this with **code-splitting** and **route-based loading**
+
+### Example with Redux Toolkit
+
+```ts
+// Dynamically injected reducer
+store.injectReducer('cart', cartReducer);
+
+// Load reducer only when visiting cart route
+<Route path="/cart" element={<CartPage />} />
+```
+
+### Example with Recoil or Jotai
+
+```tsx
+const cartAtom = atom(() => fetchCartData());
+
+function CartComponent() {
+  const [cart] = useAtom(cartAtom); // Lazy load fires on access
+}
+```
+
+---
+
+## Real-World Use
+
+### Facebook
+
+Facebook dynamically loads feed filters, post composer tools, and comment modules based on user interaction. This reduces JS execution and memory usage on mobile.
+
+### Notion
+
+Notion’s side panels (like database views, relation trees, and backlinks) are lazily initialized only when accessed — making initial load fast and responsive.
+
+### Amazon
+
+Amazon defers account-specific state (recommendations, cart, recently viewed) until those modules are activated — making category pages lightning fast.
+
+---
+
+## Benefits
+
+- ⚡ Faster cold start time
+- 📉 Lower memory and CPU usage
+- 🧩 Improved modularity
+- 🔄 Better support for dynamic routing and micro frontends
+- ✅ Aligns well with feature-flag and experimentation workflows
+
+---
+
+## Considerations and Tradeoffs
+
+- More complexity in reducer/store registration
+- Slightly delayed response on first use (loading states must be handled)
+- Potential for multiple initialization paths or stale state if not managed carefully
+
+Modern frameworks and tools (like Redux Toolkit with `store.injectReducer`, Zustand with `createStore()`, and Recoil/Jotai’s functional atoms) make this far easier than it used to be.
+
+---
+
+## Conclusion: State Should Follow the User
+
+Lazy loading is not just a performance optimization — it's a user-first design principle. It reflects the reality that **not all parts of your app are needed right away**. State, like UI, should load in response to need, not in anticipation of it.
+
+By lazy-loading state, we make our apps lighter, faster, and smarter — while still keeping the power and consistency of global state management where it matters.
+
+Your app doesn’t have to be small.
+
+But it **should feel** like it is.

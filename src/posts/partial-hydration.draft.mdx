@@ -1,0 +1,110 @@
+---
+title: "Partial Hydration — Optimizing Interactivity One Component at a Time"
+slug: "partial-hydration"
+category: "Architecture"
+tags: ["partial hydration", "performance", "react", "frameworks", "frontend optimization"]
+summary: "An in-depth look at partial hydration — a performance strategy that defers JavaScript activation at the component level, enabling faster loads and less JavaScript execution across modern frameworks."
+publishedAt: "2022-09-23"
+---
+
+# Partial Hydration — Optimizing Interactivity One Component at a Time
+
+Hydration is the hidden tax of server-rendered web apps. It turns a fast-loading HTML page into a fully interactive React (or Vue, or Svelte) app — but it does so by downloading and executing JavaScript for **every component** on the page. For large apps, that’s a problem.
+
+**Partial hydration** is one of the most important — and least understood — performance patterns in frontend architecture. It brings nuance to hydration, by **activating only the parts of the page that need interactivity**, leaving everything else static.
+
+The result? Faster load times, leaner bundles, and a smarter way to balance performance with dynamic UI.
+
+---
+
+## Why Was Partial Hydration Invented?
+
+In the early days of SSR, hydration was all-or-nothing: the whole app would rehydrate regardless of what needed to be interactive. This worked fine for small pages. But as teams scaled up and components multiplied, full hydration became a bottleneck — especially on mobile.
+
+Partial hydration emerged as a solution: what if we could render the whole page as HTML, then selectively hydrate only the pieces that **require** interactivity?
+
+This idea was independently explored by teams at Google (AMP), Netflix, eBay (Marko), and later adopted more formally by frameworks like Astro, Qwik, and Preact.
+
+---
+
+## How It Works
+
+In a partial hydration model:
+1. The entire page is rendered server-side into static HTML
+2. Only **certain components** include the code to be hydrated
+3. Those components are **bootstrapped on demand**, not upfront
+
+```tsx
+<StaticHeader />
+<HydratedSearchBox client:idle />
+<StaticArticle />
+<InteractiveComments client:visible />
+```
+
+In Astro and Marko, this is supported natively. In React, it's possible via code splitting + lazy loading + dynamic import + visibility logic (though not natively supported at the framework level — yet).
+
+---
+
+## Frameworks That Support It
+
+- **Astro** – via `client:*` directives
+- **Qwik** – built entirely around partial, resumable hydration
+- **Marko** – pioneered the concept with fine-grained control
+- **Preact** – with islands + `hydrate()` support
+- **React** – can simulate partial hydration with Suspense + lazy + custom logic
+
+---
+
+## Real-World Applications
+
+### eBay
+
+eBay’s Marko framework uses partial hydration to render large catalog pages and only hydrate interactive elements like add-to-cart buttons, login dropdowns, and filters. This drastically reduces JS sent to the client.
+
+### Google Search (AMP)
+
+AMP pages use a version of partial hydration by allowing only certain “components” to be interactive (like carousels or ads), while leaving the rest purely HTML.
+
+### Shopify Hydrogen
+
+Hydrogen allows developers to wrap client-interactive widgets (like cart buttons or selectors) and hydrate only those widgets inside an otherwise server-rendered product page.
+
+---
+
+## Benefits
+
+- 🔋 Reduced JavaScript payload
+- ⚡ Faster Time to Interactive (TTI)
+- 🌍 Better battery usage and CPU efficiency
+- 📈 Improved Core Web Vitals
+- ✅ Maintains full server-rendered HTML output (SEO-friendly)
+
+Partial hydration scales particularly well on:
+- Product detail pages
+- Long-form content sites
+- E-commerce listings
+- Documentation sites
+- Enterprise dashboards with static shell and live widgets
+
+---
+
+## Limitations and Considerations
+
+- Harder to implement manually in React (no built-in API)
+- Component boundaries must be clear and isolated
+- State management can get tricky across static/interactive boundaries
+- Increased architectural complexity without the right tooling
+
+Some frameworks (like Qwik and Astro) eliminate these problems by making partial hydration the default — which is arguably the future.
+
+---
+
+## Conclusion: The Right JavaScript in the Right Place
+
+Partial hydration isn’t about less JavaScript. It’s about **the right JavaScript in the right place**. It brings intelligence and granularity to hydration, helping teams ship faster apps without compromising on interactivity.
+
+Used wisely, partial hydration can help modern teams ship pages that are **as fast as static sites** — with the power of dynamic UIs, where and when they’re actually needed.
+
+It’s a bridge between the old web and the modern one.
+
+And it’s one of the smartest architectural decisions you can make.
