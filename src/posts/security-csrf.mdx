@@ -1,0 +1,164 @@
+---
+title: "CSRF — Cross-Site Request Forgery Explained"
+slug: "security-csrf"
+category: "Security"
+tags: ["security", "csrf", "tokens", "origin", "same-site"]
+summary: "Cross-Site Request Forgery (CSRF) tricks authenticated users into executing unwanted actions. Learn how to prevent CSRF with tokens, SameSite cookies, and origin checks."
+publishedAt: "2023-01-06"
+---
+
+# CSRF — Cross-Site Request Forgery Explained
+
+CSRF (Cross-Site Request Forgery) is a subtle, yet dangerous attack that targets user **actions**, not just input.
+
+It works like this:
+- You’re logged into a banking site
+- You visit a malicious site in another tab
+- That site sends a **forged request** to your bank — using your session cookies
+- The bank executes the request because it’s from a “logged-in” user
+
+That’s CSRF — and it’s exploited more often than you’d think.
+
+---
+
+## Real-World Example
+
+### The Samy Worm (again)
+
+Samy’s MySpace worm from the XSS example? It also included CSRF:
+- Logged-in users' credentials were used to auto-friend Samy
+- The browser sent valid MySpace cookies with the request
+- MySpace had no CSRF protection — the POST worked
+
+Result: over 1 million users were affected in 24 hours.
+
+---
+
+## What Makes CSRF Possible?
+
+- **Session cookies** are automatically sent by the browser with requests
+- Malicious pages can trigger:
+  - `<img src="https://bank.com/transfer?amount=10000">`
+  - `<form method="POST" action="https://bank.com/transfer">`
+
+Even though these pages are **not from the same origin**, the cookies are included.
+
+---
+
+## Common CSRF Vectors
+
+- HTML forms
+- Image tags
+- Hidden iframes
+- XHR/fetch with bad CORS config
+- Auto-submitting JS payloads
+
+---
+
+## Defending Against CSRF
+
+### 1. CSRF Tokens
+
+Generate a **random token** server-side and include it in all state-changing requests.
+
+```html
+<form action="/update-email" method="POST">
+  <input type="hidden" name="csrf_token" value="a7bcf90..." />
+</form>
+```
+
+The server checks that:
+- The token exists
+- It matches the session/user
+- It’s not expired
+
+### 2. SameSite Cookies
+
+Set your cookies like:
+
+```
+Set-Cookie: session=abc; SameSite=Lax; Secure
+```
+
+- `SameSite=Strict`: Only sends cookie from same-origin
+- `SameSite=Lax`: Sends on top-level GET (safe for most sites)
+- `SameSite=None`: Only used with `Secure` and cross-origin APIs
+
+This blocks most drive-by form/image CSRF attacks.
+
+### 3. Check Origin and Referer Headers
+
+Only allow state changes if:
+
+```http
+Origin: https://yourdomain.com
+Referer: https://yourdomain.com/settings
+```
+
+This mitigates CSRF in cases where tokens aren't available.
+
+---
+
+## CSRF in SPAs and APIs
+
+SPAs often use tokens (JWT) instead of cookies — which makes CSRF **less of an issue**.
+
+However:
+- If your SPA uses **cookie-based auth**, you still need CSRF protection
+- Combine **SameSite cookies** with **CSRF headers or tokens**
+
+---
+
+## CSRF in the Wild
+
+### GitHub
+
+- Uses CSRF tokens on all non-GET forms and AJAX calls
+- Enforces `SameSite=Lax` on session cookies
+
+### Django
+
+- Automatic CSRF token injection in templates
+- Middleware to reject requests without valid token
+
+### Stripe Dashboard
+
+- Authenticated dashboards with strict CSRF controls on all POSTs
+
+---
+
+## Anti-Patterns
+
+- Accepting all POST/PUT/DELETE without origin check
+- Storing auth tokens in cookies with `SameSite=None` and no CSRF token
+- Not validating CSRF token expiration
+- Misconfiguring CORS to allow credentials from `*`
+
+---
+
+## Testing CSRF
+
+Use tools like:
+- Burp Suite
+- Postman (manually forge requests)
+- Tamper Chrome
+- OWASP ZAP
+
+Try to:
+- Submit a POST without the correct token
+- Change cookie origin and replay requests
+- Upload an iframe that performs a destructive action
+
+---
+
+## Conclusion: Authenticate the Intent
+
+XSS hijacks user **input**. CSRF hijacks their **actions**.
+
+Make sure that every sensitive POST, PUT, or DELETE:
+- Comes from your domain
+- Has an intent-verifying token
+- Fails safely if tampered
+
+Because security isn’t just about what users say — it’s about what they meant to say.
+

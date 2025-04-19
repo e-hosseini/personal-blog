@@ -1,0 +1,221 @@
+---
+title: "API Authentication — Securing Access with Precision"
+slug: "api-authentication"
+category: "Back end APIs"
+tags: ["authentication", "authorization", "security", "api", "tokens", "oauth"]
+summary: "A detailed look at API authentication — from API keys to OAuth, JWTs, and session tokens. Understand how modern APIs protect access, authorize actions, and scale securely across apps and services."
+publishedAt: "2022-01-07"
+---
+
+# API Authentication — Securing Access with Precision
+
+Authentication is the front door to your API. If it’s wide open, you’re vulnerable. If it’s too locked down, nobody gets in. The challenge is finding a system that’s **secure, scalable, and frictionless** for developers and clients alike.
+
+Whether you’re building public APIs, internal microservices, or platform integrations, authentication determines who can access what — and how that identity is verified. This article explores the **core authentication patterns**, protocols, tokens, and tradeoffs that define modern API security.
+
+We’ll walk through the history of API authentication, break down API key vs JWT vs OAuth2, and show how companies like GitHub, Slack, and Stripe enforce secure, reliable access to their systems.
+
+---
+
+## Why Authentication Matters (and Why It's Hard)
+
+Authentication isn’t just about verifying identity — it’s about trust. APIs are exposed interfaces to your business logic and infrastructure. If anyone can call them, they can:
+- Read sensitive user data
+- Modify or delete records
+- Abuse rate limits
+- Fake transactions or impersonate other users
+
+At the same time, authentication must be **easy to integrate** and **performant at scale**. Poorly designed auth leads to:
+- Broken integrations
+- Confused error handling
+- Leaked credentials
+- Frustrated developers
+
+That’s why the best API platforms invest heavily in **secure, ergonomic, and well-documented authentication flows**. It’s part UX, part protocol, part cryptography — and 100% foundational.
+
+---
+
+## Common Authentication Methods
+
+### 1. API Keys
+
+API keys are static secrets associated with an app or developer account. They’re easy to use and integrate:
+
+```http
+GET /v1/orders
+Authorization: Bearer sk_test_abc123
+```
+
+Keys are simple and ubiquitous — but they come with risks. They’re long-lived, and if leaked, they grant access **until manually revoked**. Most platforms scope them to read/write access or specific endpoints.
+
+Use them for:
+- Internal apps
+- Low-risk public APIs
+- Non-user-specific operations
+
+Don’t use them for:
+- Per-user auth
+- Anything requiring granular scopes
+
+---
+
+### 2. OAuth 2.0
+
+OAuth 2.0 is the **industry standard** for delegated authorization. It allows users to grant your app access to their data on another platform — without sharing credentials.
+
+OAuth flows:
+- Authorization Code (with PKCE): for web and mobile apps
+- Client Credentials: for machine-to-machine auth
+- Implicit (deprecated): previously used in browser apps
+
+Example (Bearer token):
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI...
+```
+
+OAuth provides:
+- Token expiry
+- Scoped permissions
+- Refresh tokens
+- User consent screens
+
+You’ll see OAuth in:
+- GitHub app installs
+- Google/Facebook logins
+- Slack bots
+- Spotify integrations
+
+It’s more complex than API keys, but vastly more secure and flexible for third-party apps.
+
+---
+
+### 3. JWT (JSON Web Tokens)
+
+JWTs are self-contained tokens that encode user identity, expiration, and permissions in a signed payload.
+
+Example decoded JWT:
+
+```json
+{
+  "sub": "user_123",
+  "exp": 1710108924,
+  "role": "admin"
+}
+```
+
+Pros:
+- Stateless — no DB lookup required
+- Tamper-proof if signed properly
+- Great for microservices and stateless sessions
+
+Cons:
+- Can’t revoke easily unless blacklisting or rotating
+- Token bloat can increase HTTP size
+- Requires careful validation of `alg`, `exp`, `aud`, etc.
+
+JWTs are often used **with OAuth** or custom login flows.
+
+---
+
+### 4. Session Tokens / Cookies
+
+Traditional session-based auth stores a session ID on the server and a cookie in the browser. It’s reliable, especially for fullstack apps, but less common in stateless, distributed APIs.
+
+Great for:
+- Admin panels
+- Web apps using server rendering
+- Stateful interactions behind auth firewalls
+
+Not ideal for:
+- Public APIs
+- Mobile apps or SPAs (unless cookie-based SSO is needed)
+
+---
+
+## Best Practices for API Auth Design
+
+- Always use HTTPS to protect secrets in transit
+- Use short-lived tokens with refresh flows
+- Rotate secrets regularly
+- Use HMAC signing and strict validation on JWTs
+- Scope permissions (read-only, admin, billing)
+- Log and monitor token usage
+- Rate limit auth attempts to prevent brute force
+
+---
+
+## Real-World Authentication Flows
+
+### Stripe
+
+Uses secret/public API keys:
+- Secret keys = full access
+- Publishable keys = frontend only (token creation)
+
+Also supports OAuth for platform apps using Connect:
+- Users authorize merchants
+- Merchants grant token to apps
+- Apps access merchant accounts via scoped tokens
+
+### GitHub
+
+Uses OAuth for all integrations:
+- Users grant apps access to repos, issues, gists
+- Scopes like `repo`, `read:user`, `write:packages`
+- Includes refresh tokens and token introspection
+
+### Slack
+
+Bot and user tokens issued via OAuth
+- Bot tokens scoped to workspaces
+- Webhooks signed with HMAC SHA256
+- Fine-grained permissions for message sending, reading
+
+---
+
+## Error Handling and Recovery
+
+Return clear errors for auth issues:
+
+```http
+401 Unauthorized
+{
+  "error": "invalid_token",
+  "message": "Access token is missing or expired"
+}
+```
+
+Use:
+- `401 Unauthorized`: for missing or invalid tokens
+- `403 Forbidden`: for valid token, insufficient scope
+- `429`: if auth attempts are rate-limited
+
+Allow token refresh where possible and provide developer guidance in API docs.
+
+---
+
+## Common Pitfalls
+
+- Storing API keys in frontend code
+- Not rotating keys after leaks
+- Failing to validate JWTs properly (`alg=none`)
+- Using long-lived tokens without expiry
+- Overloading 401 for all auth errors
+- Leaking token scopes in error messages
+
+---
+
+## Conclusion: Authentication is Architecture
+
+Authentication defines trust in your API. It's not just about logging in — it determines what actions are allowed, what data is visible, and how your system scales securely.
+
+Treat authentication like infrastructure:
+- Invest in tooling
+- Educate developers
+- Rotate and monitor credentials
+- And bake it into your design from day one
+
+A good auth system is invisible when it works.
+
+And unforgettable when it fails.

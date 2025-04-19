@@ -1,0 +1,151 @@
+---
+title: "Adaptive Loading — Performance That Adapts to Real-World Devices"
+slug: "adaptive-loading"
+category: "Performance"
+tags: ["performance", "adaptive loading", "device capability", "network", "progressive enhancement"]
+summary: "Not every user has a fast device or network. Learn how to detect constraints and adapt loading strategies dynamically — from lite mode to low-bandwidth fallbacks and capability-based bundles."
+publishedAt: "2021-12-31"
+---
+
+# Adaptive Loading — Performance That Adapts to Real-World Devices
+
+Not all users browse from the same place.
+
+Some have fiber. Some have 3G. Some have gaming rigs. Others run Android Go on 8-year-old phones.
+
+Modern web apps must not only be fast — they must be **smart enough to adapt**.
+
+**Adaptive loading** means delivering different code, content, or behavior based on the user’s:
+- Device capabilities
+- Network speed
+- Battery state
+- User preferences
+
+This strategy is core to building **inclusive, performant** apps for the real world.
+
+---
+
+## What Is Adaptive Loading?
+
+Adaptive loading is:
+- Delivering less JS to slow CPUs
+- Skipping high-res images on metered networks
+- Deferring effects when `prefers-reduced-motion` is set
+- Lazy-loading or disabling features for constrained environments
+
+---
+
+## Why It Matters
+
+- 70% of global users are on mid or low-end devices
+- 60% of users browse over mobile connections
+- JS execution time (parse, compile, run) is 5x slower on budget phones
+
+Slow != bad user. It just means you need to optimize **differently**.
+
+---
+
+## Techniques
+
+### Network Information API
+
+```js
+const connection = navigator.connection;
+
+if (connection.saveData || connection.effectiveType === "2g") {
+  loadLowResImages();
+}
+```
+
+Detects slow or metered networks.
+
+---
+
+### Hardware-Based Bundle Splitting
+
+Serve lighter bundles to low-end devices:
+
+- Strip animations, optional polyfills, heavy components
+- Use User-Agent or Client Hints
+
+Example (Cloudflare Workers):
+
+```js
+if (isLowEndDevice(request)) {
+  return fetch("/lite.bundle.js");
+}
+```
+
+---
+
+### prefers-reduced-motion
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+```
+
+Respect users who want fewer animations.
+
+---
+
+### Lazy Load & Defer More Aggressively
+
+Detect when CPU or memory is constrained and:
+- Delay hydration of non-visible widgets
+- Skip expensive charts or visualizations
+- Load placeholders only
+
+---
+
+## Real-World Patterns
+
+### YouTube Lite
+
+- Loads placeholder thumbnails on slow networks
+- Uses connection API + UA detection to switch behavior
+
+### Facebook Lite
+
+- JS bundle is 200KB instead of 1.3MB
+- Fewer animations, simplified UI
+
+### Twitter Lite
+
+- Works even on 2G
+- Adaptive font loading, offline mode, aggressive cache control
+
+---
+
+## Tooling
+
+- `navigator.hardwareConcurrency` — # of logical CPUs
+- `navigator.deviceMemory` — memory in GB (rounded)
+- `navigator.connection` — network heuristics
+- User-Agent + Cloud Rendering Edge Decisions (e.g. Cloudflare, Fastly)
+
+---
+
+## Anti-Patterns
+
+- Serving the same heavy SPA to everyone
+- Animating complex visuals on low-powered GPUs
+- Ignoring data-saver mode
+- Not respecting `prefers-reduced-motion`
+
+---
+
+## Conclusion: Deliver the Right App for the Right Conditions
+
+Performance isn’t just about being fast. It’s about being **context-aware**.
+
+Adaptive loading lets you tailor your experience to your users — giving everyone what they need, when they need it.
+
+And that’s what performance is really about:
+
+Meeting users where they are.
+

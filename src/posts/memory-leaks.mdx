@@ -1,0 +1,169 @@
+---
+title: "Memory Leaks — The Silent Killers of Frontend Performance"
+slug: "memory-leaks"
+category: "Performance"
+tags: ["performance", "memory leaks", "javascript", "react", "profiling"]
+summary: "Memory leaks degrade performance gradually and often invisibly. Learn how to detect, prevent, and fix memory leaks in frontend apps — especially in React and long-lived sessions."
+publishedAt: "2022-08-19"
+---
+
+# Memory Leaks — The Silent Killers of Frontend Performance
+
+Your app starts fast. A few tabs later, it slows. Scroll stutters. RAM usage climbs.
+
+Sound familiar?
+
+That’s a memory leak.
+
+In frontend engineering, **memory leaks** are stealthy performance killers. They don’t crash your app — they **erode** it. Every click, every page, every component mounts something... and never unmounts it. Or worse — it never lets it go.
+
+In this article, we’ll explore:
+- What memory leaks are and how they happen
+- Common causes in JavaScript and React
+- Tools to detect leaks in DevTools
+- Best practices to avoid them in the first place
+
+---
+
+## What Is a Memory Leak?
+
+A memory leak happens when memory that’s no longer needed **isn’t released**.
+
+In a garbage-collected language like JavaScript, you don’t free memory manually. But memory is only garbage-collected when **nothing references it**.
+
+Leaked memory is:
+- Retained in closures
+- Trapped in listeners or timers
+- Stuck in hidden globals
+- Or held by detached DOM nodes
+
+---
+
+## Signs You Have a Leak
+
+- Gradual slowdown over time
+- Increasing memory usage in Chrome Task Manager
+- Tabs that never release memory
+- Event handlers firing on unmounted components
+- Users reporting “feels sluggish after a while”
+
+---
+
+## Common Causes
+
+### 1. Forgotten Timeouts and Intervals
+
+```tsx
+useEffect(() => {
+  const id = setInterval(() => doStuff(), 1000);
+  return () => clearInterval(id);
+}, []);
+```
+
+Without `clearInterval`, memory and CPU are consumed **forever**.
+
+---
+
+### 2. Event Listeners on Window or DOM
+
+```tsx
+useEffect(() => {
+  window.addEventListener("resize", handler);
+  return () => window.removeEventListener("resize", handler);
+}, []);
+```
+
+If not removed, listeners accumulate with every mount.
+
+---
+
+### 3. Closures Capturing State
+
+```tsx
+let store = [];
+
+function addToStore(item) {
+  store.push(item);
+}
+```
+
+If `store` grows forever and is never flushed, it becomes a leak.
+
+---
+
+### 4. Detaching DOM But Retaining References
+
+```js
+const div = document.getElementById("widget");
+document.body.removeChild(div); // detached
+window._divRef = div; // now memory can't be freed
+```
+
+Detached nodes should be released — or the memory won’t be.
+
+---
+
+### 5. React State or Context Growth
+
+Holding onto large arrays/objects in `useState` or `useContext` long-term can prevent GC.
+
+---
+
+## DevTools Detection
+
+1. Chrome DevTools → Memory → Heap Snapshot
+2. Take snapshot → perform action → take another snapshot
+3. Compare retained nodes, DOM references, listeners
+
+Use `console.memory`, `performance.memory`, and Chrome’s `Detached DOM` insights.
+
+---
+
+## Real-World Examples
+
+### Gmail
+
+- Keeps massive DOM trees alive for tabs
+- Uses internal pool + purge logic
+
+### VSCode Web
+
+- Reuses editors across tabs to reduce memory cost
+- Releases hidden views aggressively
+
+### Slack
+
+- Event listener detachment bugs caused multi-GB tabs
+- Now aggressively prunes inactive sessions
+
+---
+
+## Best Practices
+
+- Always clean up in `useEffect` return
+- Use `AbortController` for fetch cancellation
+- Avoid long-lived global state unless necessary
+- Use `WeakMap` / `WeakSet` for cache
+- Be careful with refs that point to heavy structures
+
+---
+
+## Anti-Patterns
+
+- Forgetting cleanup in `useEffect`
+- Global object that holds all fetched data
+- Not destroying component instances on route change
+- Accumulating children in a `ref` or state without removal
+
+---
+
+## Conclusion: Free What You Don’t Need
+
+Memory leaks are sneaky.
+
+They don’t yell. They don’t throw errors. But they **quietly consume** your app from the inside.
+
+Spot them early. Profile often. Clean up what you create.
+
+Because performance isn’t just about being fast now — it’s about staying fast later.
+

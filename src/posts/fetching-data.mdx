@@ -1,0 +1,215 @@
+---
+title: "Fetching Data — The Foundation of Web App Networking"
+slug: "fetching-data"
+category: "Networking Techniques"
+tags: ["fetch", "networking", "api", "http", "react", "axios", "fetch api"]
+summary: "A comprehensive exploration of data fetching techniques in frontend apps. Understand how, when, and why to fetch data, compare libraries and native APIs, and learn how to manage state, errors, and lifecycles like a pro."
+publishedAt: "2022-06-03"
+---
+
+# Fetching Data — The Foundation of Web App Networking
+
+Fetching data is the **lifeblood of modern web applications**. It’s how your frontend stays connected to your backend — and the world.
+
+Whether you're building a dashboard, form, feed, or chat system, nearly everything in a web app involves some kind of **remote data retrieval**. That’s why mastering fetch patterns is foundational for frontend engineers.
+
+In this guide, we’ll explore:
+- Core concepts in data fetching
+- `fetch` vs Axios vs modern libraries
+- Caching, retries, and cancellation
+- React-specific strategies and lifecycle alignment
+- Security, performance, and real-world pitfalls
+
+---
+
+## Why Data Fetching Matters
+
+Most frontend code isn’t static. It reacts to **users**, **APIs**, and **backend events**. The quality of your data-fetching strategy affects:
+- Load times
+- Responsiveness
+- Perceived performance
+- Error resilience
+- Server efficiency
+
+Bad data fetching = poor UX, flaky state, wasted bandwidth, and unhappy users.
+
+---
+
+## The Core Patterns
+
+### 1. Direct Fetch
+
+```ts
+const res = await fetch("/api/data");
+const json = await res.json();
+```
+
+Simple, but lacks built-in retries, error handling, timeouts, or cancellation.
+
+### 2. Axios
+
+```ts
+const { data } = await axios.get("/api/data");
+```
+
+Axios offers:
+- Automatic JSON parsing
+- Better error object semantics
+- Timeouts, interceptors, and cancel tokens
+- Popular in enterprise apps
+
+### 3. React useEffect Pattern
+
+```tsx
+useEffect(() => {
+  async function load() {
+    const res = await fetch("/api/items");
+    const json = await res.json();
+    setData(json);
+  }
+  load();
+}, []);
+```
+
+Handles lifecycle, but lacks cache/retry/dedupe unless paired with state management.
+
+---
+
+## React-Specific Solutions
+
+### React Query / TanStack Query
+
+```tsx
+const { data, isLoading, error } = useQuery("products", () =>
+  fetch("/api/products").then(res => res.json())
+);
+```
+
+Benefits:
+- Automatic caching and deduplication
+- Refetch on focus/reconnect
+- Pagination and background updates
+- Devtools and retry logic
+
+### SWR (from Vercel)
+
+```tsx
+const { data, error } = useSWR("/api/data", fetcher);
+```
+
+- Stale-while-revalidate
+- Revalidation on focus
+- Lightweight, declarative
+
+---
+
+## Key Fetch Concepts
+
+### Caching
+
+Avoid repeated requests for the same data. Use libraries with built-in cache or store responses manually.
+
+### Deduplication
+
+Prevent multiple fetches for the same key running at once — especially in concurrent React or list rendering.
+
+### Cancellation
+
+Use `AbortController` or `cancelToken` to abort in-flight requests if component unmounts or params change.
+
+```ts
+const controller = new AbortController();
+fetch(url, { signal: controller.signal });
+controller.abort();
+```
+
+---
+
+## Pagination and Infinite Load
+
+Use:
+- `offset`/`limit` or cursor-based URLs
+- Load more buttons or scroll listeners
+- React Query `useInfiniteQuery()` or SWR `useSWRInfinite()`
+
+Don’t refetch all pages on one change — cache slices.
+
+---
+
+## Error Handling
+
+Surface loading errors clearly:
+
+```tsx
+if (error) return <div>Error loading data: {error.message}</div>;
+```
+
+Also:
+- Retry with exponential backoff
+- Log to Sentry or DataDog
+- Fallback UI when offline
+
+---
+
+## Fetching on Events
+
+Not all fetches happen on mount. Trigger manually on:
+- Button clicks
+- Form submissions
+- Tab changes
+- Intersection observer scroll events
+
+Use `useCallback` + async function patterns.
+
+---
+
+## Security Concerns
+
+- Always validate and sanitize on the server
+- Don’t trust frontend data blindly
+- Avoid exposing sensitive tokens in request params
+- Use `https`, set CORS policies correctly
+- Obfuscate fetch logic if needed via proxies
+
+---
+
+## Real-World Patterns
+
+### Stripe Dashboard
+
+- Uses React Query for customer/product data
+- Polls selectively on specific components
+- Cancels when tabs switch or filters change
+
+### GitHub
+
+- Uses batched GraphQL fetches with normalized caching
+- Prefetches on hover for PR diffs, comments
+- Differs polling rate by page context
+
+---
+
+## Anti-Patterns
+
+- Fetching inside render body
+- Not handling errors or empty state
+- Triggering redundant fetches on every rerender
+- Forgetting to debounce param-driven fetches (e.g., search)
+- Ignoring slow networks / bad responses
+
+---
+
+## Conclusion: Fetch with Purpose
+
+Data fetching is easy to get started with — but hard to master.
+
+You’re not just requesting data. You’re managing:
+- Network performance
+- User feedback
+- State synchronization
+- Server load
+- Component lifecycle
+
+Fetch with intent. Abstract smartly. And always design like your bandwidth matters.
+
+Because it does.

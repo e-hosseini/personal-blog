@@ -1,0 +1,172 @@
+---
+title: "Long Polling — Real-Time Without Persistent Connections"
+slug: "long-polling"
+category: "Real-time updates"
+tags: ["long polling", "real-time", "http", "fallback", "communication"]
+summary: "Explore long polling — a technique that bridges the gap between polling and push-based systems. Learn how it works, when to use it, and how it powers chat apps, notifications, and fallbacks when sockets aren’t available."
+publishedAt: "2022-08-12"
+---
+
+# Long Polling — Real-Time Without Persistent Connections
+
+Long polling is one of the oldest tricks in the web real-time playbook — and still one of the most versatile.
+
+It’s a technique that emulates server push over traditional HTTP by keeping a request **open** until the server has something to say. Once a response arrives, the client re-initiates the connection — creating a loop that mimics live streaming without the complexity of sockets.
+
+In the age of WebSockets, SSE, and push APIs, why does long polling still matter? Because it works **almost everywhere**, scales surprisingly well, and requires **no special protocol support**.
+
+---
+
+## How Long Polling Works
+
+Traditional polling asks the server every few seconds:
+
+```ts
+setInterval(() => fetch("/api/updates"), 3000);
+```
+
+Long polling does this instead:
+
+```ts
+function poll() {
+  fetch("/api/updates")
+    .then(res => res.json())
+    .then(data => {
+      updateUI(data);
+      poll(); // immediately re-issue
+    });
+}
+poll();
+```
+
+The key difference: the **server delays the response** until data is available or a timeout is reached. The client doesn’t retry unless it gets a response.
+
+This reduces request volume and allows **near-instant delivery** once an event occurs.
+
+---
+
+## Lifecycle of a Long Poll Request
+
+1. Client makes request to `/api/updates`
+2. Server checks if there’s new data:
+   - If yes: respond immediately
+   - If no: hold the connection open for N seconds (e.g. 30s)
+3. If timeout occurs, return an empty response
+4. Client repeats the process
+
+This creates an **idle-efficient, latency-sensitive** data stream using plain HTTP.
+
+---
+
+## Use Cases
+
+### Facebook Chat (early)
+
+Facebook’s original chat system used long polling — keeping an HTTP request open for message delivery. It scaled across millions of users before WebSockets were viable at scale.
+
+### Slack (fallback)
+
+Slack switches to long polling when WebSockets are unavailable — especially in enterprise firewalls or legacy browsers.
+
+### Notification Systems
+
+Long polling works great for apps that need live alerts but can't guarantee socket support — like real-time dashboards, customer messaging, or trading apps.
+
+---
+
+## Pros and Cons
+
+✅ Pros:
+- Works in every browser
+- No need for socket servers or protocols
+- Easier to debug than WebSocket/SSE
+- Immediate response on change
+
+❌ Cons:
+- Latency if connection drops
+- HTTP overhead (headers, revalidation)
+- Still not truly bidirectional
+- Not as efficient as full-duplex protocols
+
+Long polling is a **middle-ground** solution: better than short polling, simpler than sockets.
+
+---
+
+## Implementation Tips
+
+- Use `timeout` to avoid stuck clients (e.g., 30s max wait)
+- Use async server logic to suspend request until data is ready
+- Return 204 if no data available
+- Respond with batched events if possible
+
+Backend (Node.js/Express):
+
+```js
+app.get("/api/updates", async (req, res) => {
+  const update = await waitForDataOrTimeout();
+  if (!update) return res.status(204).end();
+  res.json(update);
+});
+```
+
+---
+
+## Scaling Long Polling
+
+Long polling requires connection concurrency — which can be expensive in:
+- Thread-blocking servers (PHP, Java with servlet containers)
+- Resource-limited environments
+
+Use:
+- Non-blocking I/O (Node.js, Go, Nginx)
+- Queues + pub/sub (e.g., Redis, RabbitMQ)
+- Connection limits to prevent abuse
+
+Monitor active poll connections and backend latency under load.
+
+---
+
+## Fallback Strategies
+
+Long polling is often the **fallback layer** in a multi-tiered real-time system:
+
+1. Try WebSocket
+2. Fallback to SSE
+3. Fallback to long polling
+4. Fallback to short polling
+
+Used in SDKs like Firebase, PubNub, Pusher, and Microsoft SignalR.
+
+---
+
+## Client Resilience Patterns
+
+- Always re-initiate polling after receiving response
+- Backoff on failure (5s, 10s, 20s)
+- Reconnect aggressively on data receipt
+- Log dropped/aborted requests for diagnostics
+
+Edge tip: avoid revalidating ETags or caching — every request must reflect the most recent data.
+
+---
+
+## Anti-Patterns
+
+- Holding requests indefinitely without timeout
+- Not validating client identity (rate abuse vector)
+- Polling same resource from multiple tabs
+- Not measuring tail latencies under load
+
+---
+
+## Conclusion: The Reliable Real-Time Fallback
+
+Long polling is like the trusty 4x4 in your backend garage — not the flashiest, but it gets the job done on tough terrain.
+
+When sockets break, proxies interfere, or you're stuck with legacy tech, long polling delivers real-time updates with surprising reliability.
+
+It’s not cutting-edge.
+
+But it’s battle-tested.
+
+And in the world of real-time, that counts for a lot.

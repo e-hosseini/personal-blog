@@ -1,0 +1,182 @@
+---
+title: "CORS — Controlling Cross-Origin Requests"
+slug: "security-cors"
+category: "Security"
+tags: ["security", "cors", "same-origin", "headers", "frontend"]
+summary: "Cross-Origin Resource Sharing (CORS) governs which domains can access your APIs from the browser. Understand preflight requests, headers, and misconfiguration risks."
+publishedAt: "2022-12-23"
+---
+
+# CORS — Controlling Cross-Origin Requests
+
+Modern web apps often communicate across domains — your frontend might be on `app.com`, but your backend API lives at `api.com`.
+
+Browsers treat these as different **origins**. And for security, they enforce a strict rule:
+> JavaScript can’t make cross-origin requests unless the server explicitly allows it.
+
+This is **CORS** — Cross-Origin Resource Sharing.
+
+---
+
+## Why CORS Exists
+
+CORS protects users from malicious websites that attempt to:
+- Read sensitive data from other origins
+- Call APIs the user is authenticated against
+- Exploit CSRF-like attacks via XHR or fetch
+
+Without CORS, **any page could call any API** and read the response using the user’s credentials.
+
+---
+
+## What Counts as “Cross-Origin”?
+
+Origins are defined by **scheme + domain + port**.
+
+Examples:
+- `https://api.example.com` ≠ `https://example.com`
+- `http://localhost:3000` ≠ `http://localhost:5000`
+- `https://example.com` ≠ `http://example.com`
+
+Even the same domain with a different protocol or port is considered **cross-origin**.
+
+---
+
+## CORS in Action
+
+### Simple Request
+
+```js
+fetch("https://api.example.com/data")
+```
+
+The browser checks:
+- Is the method `GET`, `POST`, or `HEAD`?
+- Are the headers simple (no custom headers)?
+- Is the response allowed via `Access-Control-Allow-Origin`?
+
+If allowed:
+
+```http
+Access-Control-Allow-Origin: https://frontend.example.com
+```
+
+---
+
+## Preflight Requests
+
+If a request:
+- Uses methods like `PUT`, `DELETE`
+- Sends custom headers
+- Has a content type like `application/json`
+
+Then the browser sends a **preflight** request:
+
+```http
+OPTIONS /data HTTP/1.1
+Origin: https://frontend.example.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: Content-Type
+```
+
+The server must respond with:
+
+```http
+Access-Control-Allow-Origin: https://frontend.example.com
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+Access-Control-Allow-Headers: Content-Type
+```
+
+---
+
+## Allowing Credentials
+
+To allow cookies, use:
+
+```http
+Access-Control-Allow-Credentials: true
+```
+
+And the frontend must explicitly enable:
+
+```js
+fetch(url, { credentials: "include" });
+```
+
+Note: When using credentials, `Access-Control-Allow-Origin` **cannot** be `*`.
+
+---
+
+## Common Mistakes
+
+- Setting `Access-Control-Allow-Origin: *` while also using cookies
+- Forgetting to respond to `OPTIONS` requests
+- Allowing origins dynamically **without validation** (e.g. `res.set('Access-Control-Allow-Origin', req.headers.origin)`)
+- Not setting `Vary: Origin` — which can break caching
+
+---
+
+## CORS Configuration Examples
+
+### Express.js (Node)
+
+```js
+const cors = require("cors");
+app.use(cors({
+  origin: "https://frontend.example.com",
+  credentials: true
+}));
+```
+
+### NGINX
+
+```nginx
+location /api/ {
+  add_header Access-Control-Allow-Origin https://frontend.example.com;
+  add_header Access-Control-Allow-Credentials true;
+}
+```
+
+---
+
+## Real-World Example: Stripe
+
+Stripe’s API only allows CORS for:
+- Public `fetch()` APIs (e.g., Elements, webhooks)
+- Origins that are part of Stripe’s official frontend products
+
+Requests from arbitrary websites to `https://api.stripe.com` are **blocked** unless explicitly supported.
+
+---
+
+## Tools for Debugging
+
+- Chrome DevTools → Network → XHR → Headers/Console
+- CORS Anywhere (for testing with proxies)
+- Postman (no CORS enforcement)
+- curl (simulate request headers)
+
+---
+
+## Anti-Patterns
+
+- Allowing `Access-Control-Allow-Origin: *` on authenticated endpoints
+- Ignoring preflight headers
+- Not responding to OPTIONS with correct CORS headers
+- Not logging failed origin checks
+
+---
+
+## Conclusion: Trust, but Verify
+
+CORS is the browser’s built-in firewall. It’s there to prevent silent data leaks, token theft, and credential abuse.
+
+As a frontend dev:
+- Know what your API server expects
+- Understand what triggers preflight
+- Test every fetch, not just in dev
+
+And as a backend dev:
+- Whitelist trusted origins
+- Treat CORS as a security boundary — because it is.
+

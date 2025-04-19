@@ -1,0 +1,143 @@
+---
+title: "RESTful APIs — The Backbone of Web Data Exchange"
+slug: "restful-api"
+category: "Back end APIs"
+tags: ["rest", "api", "http", "data fetching", "backend"]
+summary: "A comprehensive look at RESTful APIs — how they work, why they matter, and how modern frontend apps consume them efficiently. Explore conventions, real-world systems, caching, pagination, and best practices for scalable API design."
+publishedAt: "2022-12-09"
+---
+
+# RESTful APIs — The Backbone of Web Data Exchange
+
+Before GraphQL, gRPC, and RPC-over-WebSocket, there was REST — and it’s still the most widely used API standard today.
+
+RESTful APIs (Representational State Transfer) define a **uniform interface** over HTTP for exchanging resources. REST popularized the idea that everything — users, comments, products, orders — is a **resource**, and each resource has a URL, methods (GET, POST, PUT, DELETE), and a structured representation, usually JSON.
+
+It’s more than just convention — it’s architecture. And understanding REST deeply is essential for building reliable, scalable, and maintainable frontend systems.
+
+---
+
+## Why REST Was Invented
+
+In the early 2000s, most web APIs were built using SOAP — a verbose, XML-based RPC protocol. SOAP was powerful but rigid and over-engineered for most use cases.
+
+In 2000, Roy Fielding’s dissertation introduced **REST**, proposing a simpler way to build distributed systems using existing web protocols — especially HTTP. REST emphasized:
+- **Statelessness**: every request is independent
+- **Resources**: everything addressable by URL
+- **Uniform interface**: HTTP verbs + status codes
+- **Cacheability**: responses can be cached
+- **Layered system**: support for proxies, CDNs
+
+REST caught fire in the 2010s as web services exploded — becoming the de facto API pattern for startups and enterprises alike.
+
+---
+
+## Anatomy of a RESTful API
+
+Let’s say we’re building a blogging platform.
+
+| Action         | HTTP Verb | Endpoint          |
+|----------------|-----------|-------------------|
+| Get all posts  | GET       | /api/posts        |
+| Get one post   | GET       | /api/posts/:id    |
+| Create post    | POST      | /api/posts        |
+| Update post    | PUT       | /api/posts/:id    |
+| Delete post    | DELETE    | /api/posts/:id    |
+
+Data is typically sent/received as JSON:
+```json
+{
+  "id": 123,
+  "title": "REST is not dead",
+  "author": "Ada",
+  "tags": ["http", "architecture"]
+}
+```
+
+Good REST APIs also follow conventions for:
+- **Pagination** (`?page=2&limit=10`)
+- **Filtering** (`?tag=react`)
+- **Sorting** (`?sort=created_at`)
+- **Field selection** (`?fields=id,title,author`)
+- **Status codes** (`200 OK`, `201 Created`, `400 Bad Request`, `404 Not Found`)
+
+---
+
+## Real-World REST in Practice
+
+### GitHub API
+
+GitHub’s v3 API is RESTful and follows clean conventions:
+- Authentication via OAuth or personal tokens
+- Standard pagination headers
+- Media types for previews and custom MIME types
+
+### Stripe
+
+Stripe’s API design is admired across the industry:
+- Predictable, elegant endpoint structure
+- Consistent response formats and error objects
+- Idempotent keys for safe retries
+
+### Twitter
+
+Twitter’s REST API v1.1 served billions of requests per day with streaming, filters, and timeline pagination — before moving to GraphQL internally.
+
+---
+
+## Strengths of REST
+
+- ✅ Simple to understand and debug
+- ✅ Works with every HTTP client and CDN
+- ✅ Native support for caching (via ETags, 304 Not Modified)
+- ✅ Great for public APIs and resource-driven UIs
+- ✅ Strong documentation and tooling ecosystem
+
+---
+
+## Limitations
+
+- 🚧 Overfetching / underfetching — especially in mobile
+- 🚫 Lacks native support for real-time updates
+- 🔁 Can be verbose with deeply nested resources
+- 🔍 Requires extra endpoints for non-resource queries
+- 🔐 Statelessness makes some workflows (e.g., transactions) tricky
+
+These limitations are what led to the rise of **GraphQL**, **RPC**, and **realtime APIs** — but REST still dominates due to its simplicity and ubiquity.
+
+---
+
+## Frontend Integration Patterns
+
+- Use tools like **Axios**, **SWR**, or **React Query** to abstract and cache requests
+- Normalize entities on receipt (see [Normalized Stores](/normalized-stores))
+- Cache responses with `ETag`, `Last-Modified`, or HTTP headers
+- Handle 4xx and 5xx responses gracefully with retry logic
+- Respect rate limits and backoff headers
+
+---
+
+## REST vs GraphQL
+
+| Feature             | REST         | GraphQL       |
+|---------------------|--------------|---------------|
+| Resource granularity| Per endpoint | Per query     |
+| Overfetching        | Common       | Rare          |
+| Underfetching       | Requires joins | Rare        |
+| Caching             | HTTP native  | Needs tooling |
+| Real-time           | Needs polling| Subscriptions |
+| Learning curve      | Low          | Medium        |
+
+REST is better for simple, well-defined, cacheable APIs. GraphQL shines for complex, nested, or client-driven data needs.
+
+---
+
+## Conclusion: REST Isn’t Dead — It’s Foundational
+
+REST isn’t a buzzword — it’s a bedrock. Whether you're building React apps, connecting to microservices, or designing headless CMS integrations, REST gives you a predictable, stable, and powerful way to structure communication between systems.
+
+Yes, GraphQL and other protocols have expanded our toolset.
+
+But REST? It’s still the most universal language on the web.
+
+And it’s here to stay.

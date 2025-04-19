@@ -1,0 +1,178 @@
+---
+title: "Reducing Reflows and Repaints — Taming the Browser’s Most Expensive Work"
+slug: "reducing-reflows-repaints"
+category: "Performance"
+tags: ["performance", "reflow", "repaint", "layout shift", "dom", "rendering"]
+summary: "Reflows and repaints are among the most costly rendering operations. Learn how to avoid layout thrashing, reduce visual jank, and make your frontend run smoother than ever."
+publishedAt: "2022-11-18"
+---
+
+# Reducing Reflows and Repaints — Taming the Browser’s Most Expensive Work
+
+You’ve minimized your bundle. You’ve optimized your API. But your UI still lags, stutters, or feels “heavy”.
+
+It might not be JavaScript. It might be the **browser itself** — recalculating layout, restyling, and repainting too often.
+
+These are called **reflows** and **repaints**, and they’re some of the most expensive rendering operations in a browser.
+
+In this article, you’ll learn:
+- What reflows and repaints are
+- How and when they happen
+- How to detect and reduce them
+- What triggers layout thrashing
+- Real-world fixes and best practices
+
+---
+
+## What Is a Reflow?
+
+A **reflow** (aka layout) happens when the browser recalculates the **geometry of the page**:
+- Element positions
+- Widths, heights
+- Box models and stacking
+
+Changes to DOM size or position often trigger reflows.
+
+---
+
+## What Is a Repaint?
+
+A **repaint** redraws parts of the screen after a style change:
+- Color
+- Shadow
+- Visibility
+
+Repaint is cheaper than reflow, but still expensive — especially on large surfaces.
+
+---
+
+## What Triggers Reflows?
+
+- Adding/removing DOM nodes
+- Changing layout-affecting styles (e.g. `display`, `height`, `margin`)
+- Calling measurement APIs: `offsetHeight`, `getBoundingClientRect`
+- Animating properties that require layout
+
+---
+
+## How to Detect Them
+
+### Chrome DevTools
+
+- Open Performance tab → record interaction
+- Look for “Recalculate Style”, “Layout”, “Paint”, “Composite Layers”
+- Use Paint Flashing (Rendering panel) to see repaints visually
+
+### Use `console.time()` to measure critical paths
+
+```js
+console.time("layout");
+element.offsetHeight;
+console.timeEnd("layout");
+```
+
+---
+
+## Techniques to Avoid Thrashing
+
+### Read, then Write
+
+Avoid interleaving:
+
+❌ Bad:
+
+```js
+el.style.width = "100px";
+const h = el.offsetHeight;
+el.style.border = "1px solid red";
+```
+
+✅ Good:
+
+```js
+const h = el.offsetHeight;
+el.style.width = "100px";
+el.style.border = "1px solid red";
+```
+
+---
+
+### Avoid Layout-Affecting Animations
+
+❌ Avoid:
+
+```css
+transition: height 0.3s;
+```
+
+✅ Prefer:
+
+```css
+transition: transform 0.3s;
+```
+
+Use `transform` and `opacity` — they're GPU-accelerated and don't require layout.
+
+---
+
+## Use CSS Containment
+
+```css
+.card {
+  contain: layout paint;
+}
+```
+
+Tells browser not to reflow beyond this boundary.
+
+Improves performance in dynamic UIs.
+
+---
+
+## Virtualization Helps
+
+Large lists? Virtualize them.
+
+Avoid letting the DOM grow unbounded — it increases reflow cost for every frame.
+
+Use `react-window`, `react-virtual`, or intersection observers.
+
+---
+
+## Real-World Fixes
+
+### GitHub
+
+- Lazy-loads diff view rows to avoid large layouts
+- Replaces collapsing regions with `height: auto` + transition hack
+
+### Airbnb
+
+- Moved from height-based animations to transforms on calendar/date pickers
+- Reduced mobile layout shift dramatically
+
+### Shopify
+
+- Uses React concurrent features to schedule layout-heavy updates
+
+---
+
+## Anti-Patterns
+
+- Animating `width`, `height`, `top`, `left`
+- Reading layout mid-animation
+- DOM manipulations inside requestAnimationFrame with layout reads
+- Synchronous style reads in scroll/resize handlers
+
+---
+
+## Conclusion: Don’t Let Layout Be Your Bottleneck
+
+Reflows and repaints are expensive — not just in CPU cycles, but in **perceived fluidity**.
+
+Users feel them as jank. As lag. As dropped frames.
+
+So keep your UI flowing by keeping layout **predictable** and **contained**.
+
+You can’t avoid reflows entirely — but you can sure stop them from ruining your rhythm.
+

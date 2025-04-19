@@ -1,0 +1,199 @@
+---
+title: "Semantic HTML for SEO — Meaningful Markup Matters"
+slug: "seo-semantic-markup"
+category: "SEO"
+tags: ["seo", "semantic html", "html5", "markup", "structure"]
+summary: "Semantic HTML gives your content meaning — not just style. Learn how proper use of elements like <main>, <article>, <nav>, and <section> improves SEO, accessibility, and maintainability."
+publishedAt: "2023-02-24"
+---
+
+# Semantic HTML for SEO — Meaningful Markup Matters
+
+Search engines are sophisticated — but they still rely on **structure** to understand what your content is about.
+
+That’s why **semantic HTML** is one of the oldest and most effective tools in your SEO toolkit.
+
+Semantic elements like `<main>`, `<article>`, `<nav>`, and `<section>` do more than make your code pretty:
+- They improve **SEO clarity**
+- Support **assistive technologies**
+- Enable cleaner **CSS targeting**
+- Create a better document **outline**
+
+In this guide, we’ll explore:
+- What semantic HTML means
+- Which elements to use (and avoid)
+- How it affects SEO and accessibility
+- Real-world usage and modern patterns
+
+---
+
+## What Is Semantic HTML?
+
+Semantic HTML is HTML that **describes its content’s purpose**.
+
+Instead of using generic containers (`<div>`, `<span>`) everywhere, use:
+- `<header>` for page or section headers
+- `<main>` for primary content
+- `<article>` for standalone content units
+- `<section>` for grouped, thematically related content
+- `<footer>` for closing content
+- `<aside>` for complementary info
+- `<nav>` for navigation links
+
+These tags help browsers, crawlers, and assistive tools interpret your content better.
+
+---
+
+## Why It Matters for SEO
+
+Search engines parse your DOM to extract:
+- What the page is about
+- What content is most important
+- What should be indexed or ignored
+
+Semantic markup helps them:
+- Skip over navs and footers
+- Prioritize `<main>` and `<article>`
+- Parse outlines using heading structure
+
+Plus, it improves **crawling accuracy** and **ranking relevance**.
+
+---
+
+## Example: Blog Post
+
+```html
+<article>
+  <header>
+    <h1>10 Tips for Faster Web Apps</h1>
+    <p>By Jane Doe, updated Jan 2024</p>
+  </header>
+  <section>
+    <h2>1. Bundle Wisely</h2>
+    <p>...</p>
+  </section>
+  <footer>
+    <p>Tags: Performance, JavaScript</p>
+  </footer>
+</article>
+```
+
+This structure is clear to humans **and** bots.
+
+---
+
+## Avoiding `<div>` Soup
+
+```html
+<div class="main">
+  <div class="title">
+    <h1>About</h1>
+  </div>
+  <div class="nav">
+    ...
+  </div>
+</div>
+```
+
+That code might look okay, but to a crawler? It’s a **blob** of unknown blocks.
+
+---
+
+## Semantic Nav and Footer
+
+```html
+<nav aria-label="Main navigation">
+  <ul>
+    <li><a href="/docs">Docs</a></li>
+    <li><a href="/blog">Blog</a></li>
+  </ul>
+</nav>
+
+<footer>
+  <p>© 2025 MySite. All rights reserved.</p>
+</footer>
+```
+
+Helps screen readers skip to key areas and helps SEO bots ignore non-content blocks.
+
+---
+
+## `<main>` and Landmark Roles
+
+```html
+<main id="content" tabindex="-1">
+  <h1>Privacy Policy</h1>
+  <p>...</p>
+</main>
+```
+
+Only one `<main>` per page. It tells Google: "this is the meat."
+
+---
+
+## Article vs Section
+
+- Use `<article>` for self-contained things: blog post, comment, news story
+- Use `<section>` for groups of related content **within** a page
+
+---
+
+## Semantic Nesting
+
+You can nest semantic blocks:
+
+```html
+<article>
+  <header>...</header>
+  <section>...</section>
+  <footer>...</footer>
+</article>
+```
+
+Each article can have its own header and footer — ideal for comment threads or news aggregators.
+
+---
+
+## Real-World Examples
+
+### MDN Web Docs
+
+- Deep semantic hierarchy
+- Articles, navs, code sections marked up logically
+
+### New York Times
+
+- Uses `<article>`, `<aside>`, `<figure>` throughout
+- Clear outlines for search and accessibility
+
+---
+
+## Anti-Patterns
+
+- `<div id="main">` instead of `<main>`
+- Using headings outside of a structured outline
+- Generic `<div>`s for every content block
+- Skipping sections because “CSS is easier”
+
+---
+
+## Tools to Evaluate
+
+- Lighthouse → Accessibility + SEO audits
+- WAVE tool (WebAIM)
+- Browser Accessibility Tree
+- Semantify.me
+- HTML5 Outliner bookmarklet
+
+---
+
+## Conclusion: Write for Machines, Not Just Designers
+
+Semantic HTML isn’t just old-school best practice — it’s **modern, scalable SEO**.
+
+You’re building pages that need to be **found**, **understood**, and **navigated** by real humans and robotic agents alike.
+
+So speak the language of structure.
+
+And make your markup not just valid — but meaningful.
+

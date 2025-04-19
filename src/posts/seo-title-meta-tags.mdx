@@ -1,0 +1,166 @@
+---
+title: "SEO Essentials — <title> and <meta> Tags That Matter"
+slug: "seo-title-meta-tags"
+category: "SEO"
+tags: ["seo", "meta tags", "title tag", "description", "head"]
+summary: "Learn how to craft effective <title> and <meta> tags for SEO. Understand their impact on rankings, user clicks, and how search engines parse your site."
+publishedAt: "2023-03-17"
+---
+
+## SEO Essentials — `<title>` and `<meta>` Tags That Matter
+
+The `<head>` of your HTML page might not look exciting — but it’s where **SEO begins**.
+
+Two of the most powerful and overlooked tools in SEO are:
+- The `<title>` tag
+- The `<meta>` description
+
+These aren't just for search engines — they’re for **humans scanning the search results**, deciding whether or not to click your link.
+
+In this guide, we’ll cover:
+- The purpose and behavior of `<title>` and `<meta>`
+- Best practices for writing them
+- Real-world examples and common mistakes
+- Dynamic rendering for SPAs
+- How these tags affect SEO and UX
+
+---
+
+## The `<title>` Tag
+
+### What It Does
+
+- Displays in browser tabs and bookmarks
+- Used as the **main link** in Google search results
+- Influences relevance, rankings, and click-through rate
+
+### Best Practices
+
+- Keep under **60 characters**
+- Use **target keywords early**
+- Make it unique per page
+- Describe the content — don't just repeat your brand
+
+### Example
+
+```html
+<title>Web Accessibility Guide — Build Inclusive Interfaces | MyApp</title>
+```
+
+Bad:
+
+```html
+<title>Home</title>
+```
+
+---
+
+## The `<meta name="description">` Tag
+
+### What It Does
+
+- Provides a **summary** of the page
+- Used as the snippet below the title in search engines
+- Does **not** affect ranking directly, but affects **CTR** (click-through rate)
+
+### Best Practices
+
+- Under **160 characters**
+- Describe the value of the page
+- Include relevant keywords naturally
+- Avoid keyword stuffing or vague text
+
+### Example
+
+```html
+<meta name="description" content="A complete guide to web accessibility, including ARIA, color contrast, screen readers, and keyboard support.">
+```
+
+---
+
+## Dynamic SPAs & Meta Tags
+
+In React, Vue, etc., you can use libraries to manage metadata dynamically:
+
+### React Helmet
+
+```tsx
+import { Helmet } from "react-helmet";
+
+<Helmet>
+  <title>Contact Us | MyApp</title>
+  <meta name="description" content="Reach out to our support and sales teams." />
+</Helmet>
+```
+
+### Next.js
+
+```tsx
+import Head from "next/head";
+
+<Head>
+  <title>About | MyApp</title>
+  <meta name="description" content="Learn about our mission and team." />
+</Head>
+```
+
+---
+
+## Open Graph and Social Meta Tags
+
+These tags help platforms like Facebook, Twitter, LinkedIn display **rich previews**:
+
+```html
+<meta property="og:title" content="Web Accessibility Guide" />
+<meta property="og:description" content="Build inclusive interfaces with this complete accessibility reference." />
+<meta property="og:image" content="/social-preview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+```
+
+These don’t affect SEO rankings, but **drive more shares and clicks**.
+
+---
+
+## Common Mistakes
+
+- Using the same title/meta on every page
+- Leaving tags blank or unconfigured
+- Putting entire articles in meta descriptions
+- Stuffing keywords unnaturally
+- Relying on JS without server-side rendering fallback
+
+---
+
+## Tools to Audit Tags
+
+- Google Search Console → Coverage → Enhancements
+- Lighthouse → SEO audit
+- Screaming Frog SEO Spider
+- Meta preview tools (ahrefs, Yoast, etc.)
+
+---
+
+## Real-World SEO
+
+### GitHub
+
+- Titles change per repo, issue, file view
+- Meta descriptions summarize repo purpose or issue content
+
+### MDN Web Docs
+
+- Structured, keyword-rich titles and concise meta summaries
+- High CTR due to clear value props
+
+---
+
+## Conclusion: Tiny Tags, Huge Impact
+
+Your `<title>` and `<meta>` tags are the **first impression** users see in Google.
+
+They’re your headlines. Your hook. Your invitation.
+
+Write them with purpose. Update them per page. Test them often.
+
+Because the best content in the world can still be skipped — if no one clicks.
+

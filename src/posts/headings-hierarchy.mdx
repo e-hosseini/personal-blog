@@ -1,0 +1,153 @@
+---
+title: "Headings Hierarchy — Structuring Content for Humans and Machines"
+slug: "headings-hierarchy"
+category: "Accessibility"
+tags: ["accessibility", "headings", "semantic html", "screen readers", "a11y"]
+summary: "Learn why a proper heading hierarchy is essential for accessibility. Improve screen reader navigation, SEO, and readability by structuring your content with semantic heading levels."
+publishedAt: "2022-07-01"
+---
+
+# Headings Hierarchy — Structuring Content for Humans and Machines
+
+Headings are not just visual design elements — they are the **backbone of your document's structure**.
+
+Used correctly, they:
+- Help users scan and understand content
+- Enable screen readers to build a document outline
+- Improve SEO and crawler performance
+- Provide better keyboard navigation
+
+Used incorrectly, they create **confusion and inaccessibility**.
+
+In this article, we’ll explore:
+- The semantics and hierarchy of HTML headings
+- How screen readers interpret headings
+- Best practices for structure and design
+- Common mistakes and how to fix them
+
+---
+
+## Why Headings Matter
+
+### For Sighted Users
+
+Headings give visual structure to a page. They break up content into sections and subtopics.
+
+### For Screen Reader Users
+
+Headings are navigational landmarks. Users can:
+- Jump between headings
+- Skim via heading lists
+- Understand page organization without reading every word
+
+For example, in NVDA or VoiceOver:
+- H key = next heading
+- 1–6 keys = jump to heading level
+
+---
+
+## The HTML Heading Elements
+
+HTML provides six heading elements:
+
+```html
+<h1>Page Title</h1>
+<h2>Section</h2>
+<h3>Subsection</h3>
+<h4>Sub-subsection</h4>
+<h5>Rarely needed</h5>
+<h6>Almost never needed</h6>
+```
+
+Each level represents **nested importance**, not just visual size.
+
+---
+
+## One `<h1>` Per Page
+
+- The `<h1>` should represent the main topic of the page.
+- Additional `<h1>`s can confuse assistive tech and dilute SEO signals.
+- HTML5 **allows multiple `<h1>`s** in sectioning contexts (e.g., `<section>`), but practical support is inconsistent — so be cautious.
+
+---
+
+## Building Proper Hierarchies
+
+Think like an outline:
+
+```html
+<h1>Main Topic</h1>
+  <h2>Subtopic A</h2>
+    <h3>Details A1</h3>
+    <h3>Details A2</h3>
+  <h2>Subtopic B</h2>
+    <h3>Details B1</h3>
+```
+
+Don’t skip levels (e.g., `<h1>` → `<h4>`). It creates **semantic gaps**.
+
+---
+
+## Don't Use Headings for Style
+
+This is a big accessibility sin.
+
+```html
+<h2 style="font-size: 12px">Just wanted it small</h2>
+```
+
+❌ Misleads screen readers.
+
+Instead, style appropriately:
+
+```html
+<p class="section-subtitle">Just wanted it small</p>
+```
+
+Use CSS to **style**, HTML to **structure**.
+
+---
+
+## Common Anti-Patterns
+
+- Multiple `<h1>`s with no sectioning
+- Skipping heading levels (e.g., `<h2>` followed by `<h4>`)
+- Headings used only for bold/large text
+- Buttons or cards with headings used inside them semantically (e.g., `<h3>Buy now</h3>` in a button)
+
+---
+
+## Testing and Tools
+
+- Use Lighthouse → Accessibility audit
+- Use browser's “Accessibility Tree”
+- NVDA/JAWS/VoiceOver: Navigate by heading level
+- Use browser extensions like Axe, tota11y, or HeadingsMap
+
+---
+
+## Real-World Best Practices
+
+### Government Sites
+
+- Strict heading hierarchies
+- Navigable by keyboard and screen reader
+- `<h1>` for the page, `<h2>` for each major section, etc.
+
+### MDN Web Docs
+
+- Deeply nested content with strict heading structure
+- Perfect for screen reader users skimming reference pages
+
+---
+
+## Conclusion: Structure Precedes Style
+
+Headings are more than just text formatting.
+
+They are the **semantic skeleton** of your content. And when structured well, they make the web easier to navigate, understand, and use — for everyone.
+
+So next time you reach for an `<h3>`, ask: *does this follow the flow?*
+
+Build documents that **speak clearly**, not just look good.
+

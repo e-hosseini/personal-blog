@@ -1,0 +1,250 @@
+---
+title: "API Caching — Making Speed the Default Without Sacrificing Freshness"
+slug: "api-caching"
+category: "Back end APIs"
+tags: ["api", "caching", "http", "performance", "cdn", "headers"]
+summary: "An in-depth guide to API caching. Learn how to make APIs faster and more efficient with caching strategies at every layer — HTTP, edge/CDN, server memory, and data-layer. Includes best practices, headers, invalidation, and real-world designs."
+publishedAt: "2022-01-21"
+---
+
+# API Caching — Making Speed the Default Without Sacrificing Freshness
+
+Caching is one of the most powerful — and misunderstood — tools in API design. It’s the difference between serving a response in **30 milliseconds** or **3 seconds**. It saves database load, improves scalability, and makes even complex systems feel instantaneous.
+
+Yet for many developers, caching feels risky. What if the data is stale? What if a user sees someone else’s info? What if invalidation doesn’t work?
+
+This article demystifies caching for modern APIs. We’ll cover caching strategies at multiple levels — from HTTP headers and browser caches, to CDN edge nodes, server-side memory, and data-layer optimizations. Whether you’re building REST, GraphQL, or edge functions, caching is the key to making **fast the default**.
+
+---
+
+## Why Cache?
+
+The #1 rule of caching: don’t recompute what you already know.
+
+Modern apps call APIs **hundreds of times per session** — fetching the same user profile, pricing data, product descriptions, or settings again and again. Each round-trip hits servers, runs DB queries, and burns CPU.
+
+Caching allows you to:
+- Eliminate redundant work
+- Reduce latency
+- Smooth out traffic spikes
+- Save money on compute and bandwidth
+- Deliver instant user experiences
+
+But it only works if done **intelligently**.
+
+---
+
+## Layers of Caching
+
+### 1. Browser Cache
+
+Every API response can instruct the browser to cache it using headers like:
+
+```http
+Cache-Control: max-age=60, public
+```
+
+Browsers will then reuse the cached value until the expiration time. Great for:
+- Static API responses
+- Logged-out content (e.g., product catalog)
+
+Avoid for:
+- User-specific or sensitive data (unless `private` is set)
+
+---
+
+### 2. CDN / Edge Cache
+
+CDNs like Cloudflare, Akamai, and Fastly cache API responses at the edge:
+
+```http
+Cache-Control: s-maxage=300
+```
+
+`max-age` = client/browser  
+`s-maxage` = CDN/shared
+
+Edge caching is ideal for:
+- High-traffic, read-heavy APIs
+- Unauthenticated requests
+- APIs with infrequent data changes
+
+Combined with cache keys and query normalization, CDNs can handle **millions of requests per second** with minimal backend hits.
+
+---
+
+### 3. API Gateway / Reverse Proxy Cache
+
+Gateways like Varnish, NGINX, or custom middlewares can cache specific routes:
+
+```nginx
+location /api/products {
+  proxy_cache my_cache;
+  proxy_cache_valid 200 10m;
+}
+```
+
+Useful for:
+- Caching expensive aggregations
+- Bypassing downstream pressure
+- Creating API staging layers
+
+---
+
+### 4. Server Memory / In-Memory Store
+
+Use tools like Redis or in-process caches (e.g., `lru-cache`, `NodeCache`) to cache recent results:
+
+```ts
+const result = cache.get(key) || fetchAndCache(key);
+```
+
+Benefits:
+- Ultra-fast access (microseconds)
+- Ideal for per-request memoization
+- Useful for rate limits, session lookups, feature flags
+
+Downside:
+- Volatile (RAM-only)
+- Doesn’t scale across nodes without clustering
+
+---
+
+### 5. Database and ORM-Level Caching
+
+Many ORMs (Prisma, Sequelize, TypeORM) support query-level caching or memoization of joins.
+
+Tools like:
+- Redis for caching SQL results
+- Dataloader for batching/resolving GraphQL queries
+- Materialized views for precomputing DB joins
+
+DB-level caching works well for:
+- Expensive joins or aggregations
+- Read-heavy dashboards
+- High-concurrency data access
+
+---
+
+## HTTP Caching Headers Explained
+
+```http
+Cache-Control: public, max-age=300, s-maxage=900
+ETag: "abc123"
+Expires: Wed, 21 Oct 2025 07:28:00 GMT
+```
+
+- `Cache-Control`: defines caching rules
+  - `public` or `private`
+  - `max-age`: browser cache time
+  - `s-maxage`: shared cache (CDN) time
+- `ETag`: content hash used for revalidation
+- `Expires`: deprecated in favor of `max-age`
+
+Use `ETag` with `If-None-Match` for validation:
+
+```http
+GET /api/products
+If-None-Match: "abc123"
+```
+
+If unchanged, the server responds:
+
+```http
+304 Not Modified
+```
+
+No body, fast response.
+
+---
+
+## Caching in GraphQL
+
+GraphQL is trickier to cache because:
+- Requests go over POST by default
+- Each query can ask for different data shapes
+- IDs aren’t always predictable
+
+Still, caching is possible with:
+- Query hashing (Apollo Persisted Queries)
+- Response normalization + caching (Apollo, Relay)
+- CDN layer with key-based caching on hashed payloads
+
+Use fragments and field-based cache hints to improve reuse and prefetching.
+
+---
+
+## Invalidation — The Hardest Part
+
+Caching is easy. **Invalidating** a cache when data changes is hard.
+
+Strategies:
+- TTL-based expiration (easy, safe, eventually stale)
+- Manual purge (trigger on mutation)
+- Tag-based invalidation (e.g., purge all `product:123` keys)
+- Stale-while-revalidate (serve stale, update in background)
+
+Good APIs emit webhooks or events when mutations occur — enabling real-time purge of cache keys or refreshing background workers.
+
+---
+
+## Real-World Caching Systems
+
+### Stripe
+
+- Caches static configs (products, prices) at CDN and edge
+- Authenticated data is short-lived, uncacheable
+- Uses internal TTLs for consistent freshness
+
+### GitHub
+
+- Extensive HTTP caching for public content (repos, gists)
+- Sends `ETag` headers for diff-based fetching
+- GraphQL v4 supports cache hints via directives
+
+### Shopify
+
+- Heavily caches product catalogs, assets, and media
+- Real-time updates are pushed via webhooks
+- CDN TTLs tuned by traffic type and change frequency
+
+---
+
+## Anti-Patterns and Gotchas
+
+- Caching user-specific data without scoping → data leaks
+- Not varying cache key by query param
+- Mixing `private` and `public` headers
+- Caching error responses (e.g., 404 or 500)
+- Using long TTLs without purging logic
+
+Always validate and test cache behavior — don’t just assume.
+
+---
+
+## Monitoring and Observability
+
+Track cache:
+- Hit/miss ratio
+- Eviction rate
+- Stale requests
+- Time-to-live stats
+- Backend bypass rate
+
+Log cache headers in staging and production.
+
+Use metrics to tune cache TTLs and identify over/under-caching.
+
+---
+
+## Conclusion: Cache as a Feature, Not a Hack
+
+Caching isn't cheating — it's engineering. It's a way to give users **speed, consistency, and reliability** without scaling pain.
+
+The best APIs don’t just compute fast — they cache smart. From HTTP to Redis to CDN edges, every layer can contribute to better performance.
+
+Build cache-first. Design for invalidation. Monitor, tune, and test.
+
+Fast is a feature.
+
+Make it default.

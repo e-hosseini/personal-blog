@@ -1,0 +1,162 @@
+---
+title: "Caching + Expiry — Serving Fast, Staying Fresh"
+slug: "caching-expiry"
+category: "Networking Techniques"
+tags: ["caching", "expiry", "http", "swr", "react query", "stale data"]
+summary: "Learn how to balance speed and freshness with caching and expiry techniques. Explore stale-while-revalidate, HTTP headers, memory vs persistent caches, and how top apps like GitHub and Stripe manage cache invalidation."
+publishedAt: "2022-03-18"
+---
+
+# Caching + Expiry — Serving Fast, Staying Fresh
+
+Caching is one of the most effective ways to improve perceived performance — but it’s also a minefield. Get it wrong, and your users see stale or incorrect data. Get it right, and your app feels instant, consistent, and efficient.
+
+In frontend apps, **caching and expiry** strategies determine how data is reused, how often it’s fetched, and how fast the experience feels. The key is to serve data **fast**, while ensuring it’s **fresh enough** to be trusted.
+
+In this article, we explore:
+- Cache layers and types
+- Expiry mechanisms (TTL, stale-while-revalidate)
+- Cache control via HTTP headers and libraries
+- Client-side vs server-side considerations
+- Real-world techniques used in GitHub, Stripe, and Vercel
+
+---
+
+## Why Cache?
+
+- Reduce API calls and network traffic
+- Improve response time and perceived UX
+- Avoid flicker during refetch
+- Support offline access
+- Save battery and bandwidth
+
+But caching without expiry is dangerous — you may show old or incorrect data forever.
+
+---
+
+## Caching Layers in Frontend
+
+1. **Memory cache** — in-memory object/state (fast, volatile)
+2. **Persistent cache** — IndexedDB, localStorage (long-lived)
+3. **HTTP cache** — browser-native (`Cache-Control`)
+4. **Library cache** — SWR, React Query, Apollo Client
+5. **Edge cache** — CDN, server prefetch
+
+Each layer has its own expiration model, storage, and invalidation logic.
+
+---
+
+## Expiry Strategies
+
+### Time-To-Live (TTL)
+
+Data expires after a fixed interval.
+
+```js
+const cached = getFromCache();
+if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+  return cached.value;
+}
+```
+
+### Stale-While-Revalidate (SWR)
+
+Use stale data instantly, fetch fresh data in the background:
+
+```tsx
+const { data } = useSWR("/api/user", fetcher, {
+  refreshInterval: 30000,
+});
+```
+
+Useful when data isn’t **critical** to be 100% up-to-date (e.g. dashboards, lists).
+
+---
+
+## HTTP Headers for Caching
+
+```http
+Cache-Control: public, max-age=60, stale-while-revalidate=30
+ETag: "abc123"
+```
+
+- `max-age`: How long data is fresh
+- `stale-while-revalidate`: Use stale content during fetch
+- `ETag`: Unique ID for the content
+
+Browser will cache and revalidate on next request if expired.
+
+---
+
+## Manual Expiry in React Query
+
+```tsx
+useQuery("user", fetchUser, {
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  cacheTime: 1000 * 60 * 10, // garbage collection after idle
+});
+```
+
+- `staleTime`: How long data is "fresh"
+- `cacheTime`: How long data stays in memory before being deleted
+
+---
+
+## Cache Invalidation
+
+Cache invalidation is the hardest part.
+
+Strategies:
+- Revalidate on focus/tab restore
+- Invalidate after mutations (`queryClient.invalidateQueries`)
+- Use cache keys + query params for per-resource freshness
+- Periodic TTL expiry (auto refetch)
+
+---
+
+## Real-World Practices
+
+### GitHub
+
+- Uses ETag-based revalidation
+- Stale cache for performance; always revalidates on focus
+
+### Stripe
+
+- Caches static resources (prices, metadata)
+- Authenticated data bypasses CDN; session-local cache only
+
+### Vercel
+
+- Leverages CDN + client-side SWR
+- Prefetches on hover + keeps cache warm across nav
+
+---
+
+## Anti-Patterns
+
+- No cache (needlessly slow every time)
+- Infinite cache without expiry (stale forever)
+- Relying on `localStorage` without TTL logic
+- Refetching data on every page load
+- Mutating cached data without invalidating
+
+---
+
+## Conclusion: Fast Feels Fresh — But Only If You Control It
+
+Caching is performance magic. But expiry is the safety switch.
+
+Build a cache that’s:
+- Fast by default
+- Smart about staleness
+- Respectful of user trust
+
+Because no one wants to stare at a spinner.
+
+And no one wants to see data from last Tuesday.
+
+Cache fast.
+
+Expire wisely.
+

@@ -1,0 +1,188 @@
+---
+title: "Optimistic Updates — Making Your UI Feel Instant"
+slug: "optimistic-updates"
+category: "Networking Techniques"
+tags: ["optimistic updates", "ui", "latency", "react", "ux", "mutation"]
+summary: "Learn how optimistic updates improve perceived performance by updating the UI before server confirmation. Explore use cases, implementation patterns, error recovery, and how real products like Twitter, Notion, and GitHub use them."
+publishedAt: "2022-09-09"
+---
+
+# Optimistic Updates — Making Your UI Feel Instant
+
+In a perfect world, network requests would be instant. But in reality, even a 300ms delay feels sluggish when you're clicking, typing, or dragging. That's why **optimistic updates** exist.
+
+Instead of waiting for the server to confirm that something has happened — like saving a comment, liking a post, or updating a title — we **immediately reflect the change in the UI**, assuming it will succeed. If it doesn’t, we roll it back.
+
+This simple idea can drastically improve perceived performance and user experience. It makes apps feel **snappy**, **responsive**, and **native-quality**.
+
+In this article, we’ll go deep into:
+- How optimistic updates work
+- When to use them (and when not to)
+- Real-world examples from top products
+- Patterns with React Query, SWR, Redux, and beyond
+- Dealing with failures, revalidation, and race conditions
+
+---
+
+## What Are Optimistic Updates?
+
+An optimistic update is a **speculative UI change** — the frontend behaves as if a mutation succeeded before getting a server response.
+
+Example: The user likes a tweet → the heart icon fills instantly → request is sent → server responds later.
+
+If the request fails, the UI **rolls back** or shows an error.
+
+Optimistic updates are part of the broader principle of **optimistic concurrency control** — assume success, correct on failure.
+
+---
+
+## Why It Matters
+
+- Eliminates perceived latency
+- Aligns with real-world expectations (touch feels instant)
+- Improves trust in responsiveness
+- Prevents flickers and loading spinners
+- Keeps app snappy even on mobile or slow connections
+
+Without optimistic updates:
+- The UI freezes waiting for confirmation
+- Loading states disrupt UX flow
+- Interactions feel sluggish or broken
+
+---
+
+## Implementation Example (React + Mutation)
+
+```tsx
+const [liked, setLiked] = useState(false);
+
+const handleLike = () => {
+  setLiked(true); // optimistic update
+
+  fetch("/api/like", { method: "POST" })
+    .then(res => {
+      if (!res.ok) throw new Error("Failed");
+    })
+    .catch(() => {
+      setLiked(false); // rollback
+    });
+};
+```
+
+The UI is **immediately responsive**, and the rollback handles rare errors.
+
+---
+
+## With React Query
+
+```tsx
+const mutation = useMutation(sendLike, {
+  onMutate: async (newData) => {
+    await queryClient.cancelQueries("likes");
+
+    const previous = queryClient.getQueryData("likes");
+    queryClient.setQueryData("likes", old => [...old, newData]);
+
+    return { previous };
+  },
+  onError: (err, newData, context) => {
+    queryClient.setQueryData("likes", context.previous);
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries("likes");
+  }
+});
+```
+
+Here we:
+- Cancel in-flight queries
+- Store the previous state
+- Apply the optimistic change
+- Rollback on failure
+- Revalidate on success
+
+---
+
+## With SWR
+
+```tsx
+mutate("/api/posts", async (prev) => {
+  const optimistic = [...prev, newPost];
+  await fetch("/api/posts", { method: "POST", body: JSON.stringify(newPost) });
+  return optimistic;
+}, { optimisticData: [...data, newPost], rollbackOnError: true });
+```
+
+SWR makes optimistic UI logic declarative and rollback safe.
+
+---
+
+## Real-World Use Cases
+
+### Twitter
+
+- Likes, retweets, bookmarks update instantly
+- Backend reconciles later and can silently correct the UI
+
+### Notion
+
+- Every keystroke is optimistic
+- Updates are synced in the background and merged
+
+### GitHub
+
+- Issue reactions, comments, PR merges are optimistic
+- Keeps interaction fast while preserving eventual consistency
+
+---
+
+## Risks and Tradeoffs
+
+- If the server rejects the mutation, the user may see **UI inconsistency**
+- Requires **rollback logic** and cached state
+- Race conditions can corrupt data if not handled
+- User may interact with stale or temporary state
+
+Best mitigations:
+- Ensure deterministic mutation logic
+- Use unique local IDs to track temp items
+- Limit optimistic updates to **safe, idempotent actions**
+
+---
+
+## Good Patterns
+
+- Save a snapshot of current state before mutation
+- Apply local UI update
+- Try server call in parallel
+- Rollback only if necessary
+- Revalidate on confirmation
+
+Avoid blocking logic — treat server confirmation as **asynchronous validation**, not a blocker.
+
+---
+
+## Anti-Patterns
+
+- Optimistically updating **critical data** (passwords, balances)
+- Failing to rollback on mutation errors
+- Updating UI with **derived state** (instead of cached source)
+- Replacing entire lists (breaks concurrent updates)
+- Stacking multiple mutations with no rollback tracking
+
+---
+
+## Conclusion: UX that Feels Like Magic
+
+Optimistic updates blur the line between **frontend and backend** — and when done right, the user can’t tell the difference.
+
+It’s a mindset:
+- Trust the user
+- Trust the system
+- Prioritize responsiveness
+
+Because waiting for the server is fine.
+
+But **feeling like you didn’t have to wait at all** — that’s delightful.
+
+And delight wins.

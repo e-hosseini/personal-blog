@@ -1,0 +1,179 @@
+---
+title: "Polling — Keeping UIs in Sync with Server State"
+slug: "polling"
+category: "Networking Techniques"
+tags: ["polling", "fetching", "real-time", "api", "http", "interval"]
+summary: "A deep technical look at polling as a strategy to keep client UIs updated with backend data. Understand short polling, long polling, usage patterns, performance tradeoffs, and alternatives like SSE and WebSockets."
+publishedAt: "2022-09-30"
+---
+
+# Polling — Keeping UIs in Sync with Server State
+
+Polling is one of the oldest and simplest ways to keep the frontend in sync with the backend — but it's also one of the most misunderstood.
+
+At its core, polling means **repeatedly requesting data** from the server at a fixed interval. It’s how you ask, “Has anything changed?” over and over — hoping for a new answer.
+
+While more sophisticated techniques like Server-Sent Events and WebSockets offer real-time capabilities, polling remains relevant in many apps due to its **reliability, compatibility, and ease of use**.
+
+In this article, we’ll explore:
+- What polling is and why it matters
+- How to implement it correctly in modern apps
+- Short polling vs long polling
+- Performance considerations and best practices
+- Real-world polling strategies from top products
+
+---
+
+## What Is Polling?
+
+Polling is a network strategy where the client:
+1. Sends a request to the server
+2. Receives a response (new or unchanged)
+3. Waits (or not), then repeats
+
+There are two broad types:
+- **Short polling**: Fires every X seconds (e.g. `setInterval`)
+- **Long polling**: Keeps the connection open until something changes
+
+Short polling is like repeatedly asking: “Are we there yet?”
+Long polling is like saying: “Tell me when we’re there.”
+
+---
+
+## Implementing Short Polling
+
+Simple version:
+
+```tsx
+useEffect(() => {
+  const interval = setInterval(() => {
+    fetch("/api/status")
+      .then(res => res.json())
+      .then(console.log);
+  }, 5000);
+  return () => clearInterval(interval);
+}, []);
+```
+
+Short polling is:
+- ✅ Simple
+- ✅ Works everywhere
+- ❌ Wastes bandwidth if nothing changes
+- ❌ Can overload APIs under heavy traffic
+
+---
+
+## Implementing Long Polling
+
+```tsx
+function poll() {
+  fetch("/api/updates")
+    .then(res => res.json())
+    .then(data => {
+      updateUI(data);
+      poll(); // restart immediately
+    });
+}
+
+useEffect(() => {
+  poll();
+}, []);
+```
+
+Long polling:
+- ✅ Reduces unnecessary requests
+- ✅ Faster data delivery
+- ❌ Harder to debug
+- ❌ Needs timeout handling and error recovery
+
+---
+
+## Real-World Use Cases
+
+### Slack
+
+- Uses WebSockets when possible
+- Falls back to polling if sockets are blocked by firewalls
+
+### GitHub Notifications
+
+- Short polling every 60–120 seconds to check for new alerts
+- Adjusts interval based on activity
+
+### CI/CD Tools (e.g. Netlify, Vercel)
+
+- Poll build/deploy logs using short polling or long polling with ETag diffing
+- Render logs incrementally as they arrive
+
+---
+
+## Best Practices
+
+- Use **exponential backoff** on failures
+- Use **ETag** or `Last-Modified` headers to avoid re-downloading unchanged data
+- Pause polling when tab is hidden (`visibilitychange`)
+- Don't poll from multiple tabs — coordinate with `BroadcastChannel`
+- Debounce pollers on param changes (e.g., filtered views)
+
+---
+
+## Optimization Strategies
+
+- Use `AbortController` to cancel in-flight requests if user navigates away
+- Avoid polling resources that are unlikely to change (e.g., metadata)
+- Use conditional headers to reduce payload size
+- Switch to push-based when practical (SSE/WebSocket)
+
+---
+
+## Polling in React Query / SWR
+
+```tsx
+useQuery("data", fetcher, { refetchInterval: 5000 });
+```
+
+- Automatically re-polls on interval
+- Stops polling when component unmounts
+- Refetches on focus/tab switch
+
+SWR:
+
+```tsx
+useSWR("/api/data", fetcher, { refreshInterval: 5000 });
+```
+
+---
+
+## Anti-Patterns
+
+- Hardcoding `setInterval` in global scope
+- Polling with `fetch` but ignoring stale responses
+- Triggering full data reloads on every poll
+- Failing to pause polling during errors or when user is idle
+- Ignoring retry strategy — leading to thundering herd problem
+
+---
+
+## When Not to Use Polling
+
+- Ultra-low latency applications (use WebSockets)
+- Broadcast-based updates (prefer SSE or pub/sub)
+- High-traffic scenarios with expensive data
+
+Polling is reliable, but **not always scalable**. Use it when:
+- You have few users
+- Data changes slowly
+- You can cache between polls
+
+---
+
+## Conclusion: Polling Done Right Is Still Powerful
+
+Polling gets a bad rap. But with the right strategy — caching, debouncing, pausing, headers, and smart intervals — it becomes a surprisingly robust and practical solution for many frontend apps.
+
+Don’t over-engineer real-time when polling fits the job.
+
+And when you outgrow it? Level up to push.
+
+Until then: keep asking the server nicely, at the right times.
+

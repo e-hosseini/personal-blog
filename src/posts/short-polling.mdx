@@ -1,0 +1,130 @@
+---
+title: "Short Polling — The Simplest Form of Real-Time Communication"
+slug: "short-polling"
+category: "Real-time updates"
+tags: ["polling", "real-time", "api", "communication", "interval"]
+summary: "Explore short polling — the most basic real-time communication pattern. Learn how it works, when to use it, and how it compares to other real-time techniques like long polling, SSE, and WebSockets."
+publishedAt: "2023-04-14"
+---
+
+# Short Polling — The Simplest Form of Real-Time Communication
+
+In the early days of web development, “real-time” often meant one thing: **polling**. Before WebSockets, Server-Sent Events, and HTTP/2 streaming, short polling was the go-to solution for building apps that needed fresh data — even if it meant repeatedly asking the server, “Got anything new yet?”
+
+**Short polling** is a technique where a client makes frequent, repeated HTTP requests at fixed intervals to check for updates. It’s easy to implement, works with any backend stack, and has no special infrastructure needs. But it also comes with limitations — particularly at scale.
+
+In this article, we’ll explore how short polling works, why it’s still relevant, and how to use it wisely in modern frontend systems.
+
+---
+
+## How Short Polling Works
+
+At its core, short polling is simple:
+
+```ts
+setInterval(() => {
+  fetch("/api/notifications")
+    .then((res) => res.json())
+    .then((data) => updateUI(data));
+}, 3000);
+```
+
+Every few seconds, the browser hits the server asking for fresh data. If there’s nothing new, the response is empty or unchanged. If there is, the UI updates accordingly.
+
+It’s fire-and-forget. There's no persistent connection — just repeated round-trips.
+
+---
+
+## Why It’s Still Useful
+
+Despite being “old school,” short polling is still relevant in certain scenarios:
+- Low-frequency updates (e.g., checking for new messages)
+- Environments where WebSockets or SSE are blocked
+- Lightweight, short-lived UIs that don’t justify complex infra
+- Quick prototypes or apps without a real-time backend
+
+Short polling trades efficiency for **simplicity** — and sometimes, that’s all you need.
+
+---
+
+## Downsides and Limitations
+
+Short polling can be extremely wasteful:
+- Wasted requests when no data changes
+- Unnecessary load on backend and databases
+- Scalability bottlenecks under high traffic
+- Delays between poll cycles = reduced real-time fidelity
+
+For example, polling every 5 seconds = up to 12 server hits per minute, per user. Multiply that by 10,000 users and your API may be doing **millions** of pointless calls per hour.
+
+---
+
+## Real-World Use Cases
+
+### Gmail (early)
+
+In its early versions, Gmail used short polling to check for new emails. Every N seconds, the frontend hit the server to ask if anything had changed.
+
+### Slack (fallback mode)
+
+Slack uses WebSockets by default, but falls back to short polling if connections fail — maintaining usability in restricted networks.
+
+### IoT Dashboards
+
+Devices that only occasionally send data (like sensors or smart meters) often use polling from a central UI to fetch updates in a predictable loop.
+
+---
+
+## Best Practices
+
+- Use **backoff** if the user is idle or the tab is hidden
+- Poll only visible or active views
+- Use **ETag** or `Last-Modified` headers for lightweight diffs
+- Cache previous responses and compare to avoid redraws
+- Switch to **long polling** or **WebSockets** as needs evolve
+
+Example with backoff and visibility:
+
+```ts
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    startPolling();
+  } else {
+    stopPolling();
+  }
+});
+```
+
+---
+
+## Anti-Patterns
+
+- Polling every second with no caching or deduplication
+- Polling across tabs (instead of using BroadcastChannel or SharedWorker)
+- Ignoring stale data risk if response lags the interval
+- Not backing off during errors or timeouts
+
+Polling is simple — but without safeguards, it’s an accidental DDoS against your own backend.
+
+---
+
+## Alternatives
+
+- **Long Polling**: Hold the request open until data arrives
+- **Server-Sent Events**: One-way push from server to client
+- **WebSockets**: Full-duplex, real-time streams
+- **GraphQL Subscriptions**: Real-time data via GraphQL transport
+
+Short polling is a gateway to these richer models — and can often act as a fallback when they aren’t viable.
+
+---
+
+## Conclusion: Know When to Poll
+
+Short polling is real-time without the infrastructure. It's a minimalistic way to add responsiveness to your UI — no sockets, no protocols, just repeated requests.
+
+Used wisely, it provides real value. Misused, it can crash your servers.
+
+Poll with purpose. Optimize aggressively. And know when to upgrade.
+
+Because sometimes, asking again and again is good enough — until it's not.

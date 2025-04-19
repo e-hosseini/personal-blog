@@ -1,0 +1,167 @@
+---
+title: "Tree Shaking — Eliminate Dead Code and Ship Less JavaScript"
+slug: "tree-shaking"
+category: "Performance"
+tags: ["performance", "tree shaking", "webpack", "esmodules", "rollup", "bundling"]
+summary: "Understand the history, mechanics, and real-world impact of tree shaking. Learn how modern bundlers like Webpack and Rollup remove unused code and how to write shakeable libraries and apps."
+publishedAt: "2023-05-05"
+---
+
+# Tree Shaking — Eliminate Dead Code and Ship Less JavaScript
+
+What if you could remove all the parts of your code that were never used? That’s the promise of **tree shaking** — and it’s one of the most important tools in modern frontend performance optimization.
+
+Tree shaking is a form of **dead code elimination** performed at bundle time. It analyzes your imports and dependencies, identifies which parts are unused, and removes them from the final bundle.
+
+Think of it like pruning a tree: you keep only the branches you need.
+
+In this deep guide, we’ll explore:
+- What tree shaking is (and isn’t)
+- How bundlers like Webpack and Rollup shake your code
+- Patterns that break tree shaking
+- How to write tree-shakeable modules
+- Real-world optimizations from libraries like Lodash and Material UI
+
+---
+
+## A Brief History
+
+The idea of dead code elimination comes from compiler theory, but in JavaScript, it wasn’t practical until **ES6 modules (ESM)**.
+
+Why? Because prior to ESM, most code used CommonJS (`require()`), which is **dynamic** and not statically analyzable. Tree shaking requires **static structure** to work.
+
+With ESM (`import { x } from "lib"`), bundlers can see which exports are used — and drop the rest.
+
+Rollup was the first to popularize this for frontend, and Webpack followed with support in v2+.
+
+---
+
+## How Tree Shaking Works
+
+Tree shaking relies on:
+- **Static imports** (ESM syntax)
+- **Pure functions** or side-effect-free code
+- Bundlers that understand module graphs
+
+Example:
+
+```js
+// math.js
+export function add(x, y) { return x + y; }
+export function subtract(x, y) { return x - y; }
+
+// index.js
+import { add } from './math';
+```
+
+If you never call `subtract()`, the bundler can drop it.
+
+---
+
+## Bundler Support
+
+### Rollup
+
+Rollup was built for ESM. Tree shaking is automatic and very effective — it can drop unused classes, functions, and imports easily.
+
+```ts
+export default {
+  input: 'index.js',
+  output: { file: 'bundle.js', format: 'esm' },
+  treeshake: true
+}
+```
+
+### Webpack
+
+Webpack supports tree shaking when:
+- Using ESM syntax
+- `mode` is set to `"production"`
+- `sideEffects` are marked correctly in `package.json`
+
+```json
+{
+  "sideEffects": false
+}
+```
+
+This tells Webpack it's safe to prune unused files/modules.
+
+---
+
+## Breaking Tree Shaking
+
+Tree shaking **won’t work** if:
+- You use CommonJS (`require()`)
+- You import entire libraries (e.g., `import _ from "lodash"`)
+- Modules have top-level side effects
+- You mutate exports dynamically
+
+Avoid patterns like:
+
+```js
+export const result = someFunction();
+```
+
+If `someFunction()` has side effects, bundlers will keep it.
+
+---
+
+## Real-World Case Studies
+
+### Lodash
+
+Historically, `import _ from 'lodash'` included the **entire library** (~70KB gzip). Now you can import individual functions:
+
+```js
+import debounce from 'lodash/debounce';
+```
+
+Or use **babel-plugin-lodash** to auto-optimize imports.
+
+### Material UI
+
+Early versions of MUI were not tree-shakeable. You had to import full component libraries. With v5+, ESM exports and emotion-styled components support full tree shaking.
+
+---
+
+## Writing Shakeable Code
+
+- Use **pure exports** (stateless functions, constants)
+- Avoid `export default` unless necessary
+- Mark `sideEffects: false` in `package.json`
+- Avoid dynamic `require()` or `eval`
+- Structure your library into granular submodules
+
+---
+
+## Tools to Visualize Bundle
+
+- **Webpack Bundle Analyzer**
+- **Rollup Plugin Visualizer**
+- **Source Map Explorer**
+
+These tools help you **see what’s included** — and what’s not.
+
+---
+
+## Anti-Patterns
+
+- Using libraries without considering their size
+- Re-exporting everything in index.js
+- Mixing CommonJS and ESM
+- Relying on runtime configuration for modularity
+
+---
+
+## Conclusion: Ship Only What You Need
+
+Tree shaking is more than a bundler feature — it’s a **design philosophy**.
+
+It rewards clarity. It punishes complexity.
+
+If your code is structured well, you ship less — and your users get faster apps.
+
+So prune those branches. Shake that tree.
+
+And let your bundle breathe.

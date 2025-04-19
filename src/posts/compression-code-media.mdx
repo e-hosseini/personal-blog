@@ -1,0 +1,177 @@
+---
+title: "Compression — Shrinking Code and Media Without Losing Power"
+slug: "compression-code-media"
+category: "Performance"
+tags: ["compression", "gzip", "brotli", "media optimization", "web performance"]
+summary: "Compression is one of the highest-impact optimizations in frontend performance. Learn how to shrink JavaScript, CSS, and media assets for faster loads and leaner experiences — without breaking functionality."
+publishedAt: "2022-04-15"
+---
+
+# Compression — Shrinking Code and Media Without Losing Power
+
+You spend months building an amazing app, only to realize… your users are downloading 5MB of JavaScript and 15MB of images.
+
+Even with all your fancy code splitting and tree shaking, you’re still sending far more bytes than necessary.
+
+The solution? **Compression** — of both your code and your media assets.
+
+This guide dives deep into:
+- The history and mechanics of Brotli and Gzip
+- How modern build tools compress JS, CSS, and HTML
+- Optimizing media (images, videos, fonts)
+- CDN and server config tips
+- Real-world case studies from top web platforms
+
+---
+
+## Why Compression?
+
+Compression reduces:
+- Transfer size
+- Time to First Byte (TTFB)
+- Time to Interactive (TTI)
+- Data usage on mobile
+
+In many apps, enabling compression can **halve** page weight.
+
+It’s a backend concern — but with **massive frontend implications**.
+
+---
+
+## Gzip vs Brotli: What’s the Difference?
+
+| Feature   | Gzip        | Brotli      |
+|-----------|-------------|-------------|
+| Compression | Fast      | Better      |
+| Ratio       | ~30-40%   | ~40-50%     |
+| Speed       | Faster    | Slower      |
+| Support     | All major browsers | All modern browsers |
+
+Brotli is **better**, especially at higher levels. But Gzip is still a great fallback.
+
+### Enable via server:
+
+```nginx
+gzip on;
+brotli on;
+brotli_static on;
+```
+
+Or via Cloudflare, Netlify, Vercel, etc.
+
+---
+
+## JavaScript + CSS Compression
+
+Most bundlers output uncompressed `.js`, but serve Gzip/Brotli in production.
+
+Webpack + Compression Plugin:
+
+```js
+new CompressionPlugin({
+  algorithm: "brotliCompress",
+  test: /\.(js|css|html|svg)$/,
+})
+```
+
+Vite and Next.js support this out of the box.
+
+---
+
+## HTML Compression
+
+Use server-level gzip + minified HTML templates:
+
+```html
+<!-- Before -->
+<div>
+  <h1>   Hello   </h1>
+</div>
+
+<!-- After -->
+<div><h1>Hello</h1></div>
+```
+
+Remove comments, whitespace, and unused templates.
+
+---
+
+## Image Compression
+
+Images are the **heaviest part** of most UIs.
+
+Strategies:
+- Use modern formats: **WebP**, **AVIF**
+- Compress before upload (e.g., TinyPNG, ImageMagick)
+- Lazy-load offscreen images
+- Resize images to max display dimensions
+- Use responsive `srcset`
+
+```html
+<img src="image.avif" srcset="image-480.webp 480w, image-1080.avif 1080w" loading="lazy" />
+```
+
+---
+
+## Video and Media
+
+- Use **H.265** or **AV1** for better compression
+- Host on adaptive platforms (Mux, Cloudflare Stream, YouTube embed)
+- Avoid autoplay loops unless compressed aggressively
+
+---
+
+## Font Optimization
+
+Fonts are often 100–300KB+.
+
+Best practices:
+- Use WOFF2 or WOFF
+- Subset unused glyphs
+- Use unicode-range
+- Preload and cache aggressively
+
+```html
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+```
+
+---
+
+## Real-World Case Studies
+
+### Twitter Lite
+
+- Uses Brotli at level 11
+- Images converted to WebP
+- JS chunks compressed to 70% smaller size
+
+### Airbnb
+
+- Font subsetting reduced size from 240KB → 18KB
+- Only loads images in viewport
+- JS bundle shrinks from 1.6MB → 390KB post-compression
+
+---
+
+## Anti-Patterns
+
+- Serving uncompressed assets (especially JS/CSS)
+- Using PNG where JPEG/WebP is fine
+- Not compressing images before uploading
+- Overusing heavy font libraries (or multiple font weights)
+- Using videos instead of animated SVGs or CSS
+
+---
+
+## Conclusion: Make Every Byte Count
+
+Compression is invisible to users — but critical for experience.
+
+It’s **cheap to implement**, **massive in payoff**, and **essential at scale**.
+
+Whether it’s text or pixels — squeeze out what you don’t need.
+
+And make your app feel lighter, faster, smarter.
+
+Because on the web, size does matter.
+

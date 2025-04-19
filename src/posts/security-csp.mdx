@@ -1,0 +1,189 @@
+---
+title: "CSP — Content Security Policy for Runtime Defense"
+slug: "security-csp"
+category: "Security"
+tags: ["security", "csp", "xss", "headers", "sandbox"]
+summary: "Content Security Policy (CSP) is a browser defense against XSS and code injection. Learn how to use CSP headers to restrict scripts, control sources, and reduce attack surface."
+publishedAt: "2022-12-30"
+---
+
+# CSP — Content Security Policy for Runtime Defense
+
+You’ve written clean code. You’ve escaped output. You’ve sanitized input.
+
+But what happens if something **still gets through**?
+
+That’s what **Content Security Policy (CSP)** is for — a powerful browser-based firewall that mitigates:
+- XSS attacks
+- Script injections
+- Malicious third-party assets
+
+CSP doesn’t just prevent execution — it gives you **visibility** and **control** over what can run on your page.
+
+---
+
+## What is CSP?
+
+CSP is an HTTP header (or meta tag) that tells the browser:
+> Only load and execute resources from these allowed sources.
+
+It works like a **whitelist** for:
+- Scripts
+- Styles
+- Images
+- Fonts
+- Frames
+- Connections
+
+When used correctly, it shuts down many classes of attacks **before they do harm**.
+
+---
+
+## Basic CSP Example
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' https://trusted.cdn.com;
+  style-src 'self' 'unsafe-inline';
+  object-src 'none';
+```
+
+This means:
+- Only load scripts from current origin and trusted CDN
+- Allow inline styles (not recommended unless necessary)
+- Block all `<object>` and Flash embeds
+
+---
+
+## Key Directives
+
+| Directive       | Purpose                                         |
+|-----------------|-------------------------------------------------|
+| `default-src`   | Fallback for all other resource types           |
+| `script-src`    | JavaScript files and inline scripts             |
+| `style-src`     | CSS and style tags                              |
+| `img-src`       | Images and favicons                             |
+| `font-src`      | Font files                                      |
+| `connect-src`   | XHR, fetch, WebSocket endpoints                 |
+| `frame-src`     | `<iframe>` sources                              |
+| `object-src`    | Flash, plugins (usually set to `'none'`)        |
+| `report-uri`    | Where violations are reported                   |
+
+---
+
+## Preventing Inline Scripts
+
+XSS attacks often rely on injecting `<script>` or event handlers (`onclick="..."`).
+
+Disable inline scripts with:
+
+```http
+script-src 'self';
+```
+
+Or, allow only **hashes** or **nonces**:
+
+```html
+<script nonce="abc123">/* your script */</script>
+```
+
+```http
+Content-Security-Policy: script-src 'nonce-abc123';
+```
+
+---
+
+## Violation Reporting
+
+Use `report-uri` or `report-to` to gather metrics:
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  report-uri https://csp.example.com/report;
+```
+
+Browsers send JSON reports when violations occur. Helps detect:
+- Attacks
+- Misconfigurations
+- Third-party issues
+
+---
+
+## Real-World Example: GitHub
+
+GitHub sets strict CSP:
+
+- `object-src 'none'`
+- `base-uri 'none'`
+- `script-src` with nonce + hash whitelisting
+- Dynamic headers updated on each page render
+
+This protects against repo injection, malicious gists, etc.
+
+---
+
+## Using CSP in Your App
+
+### Express.js Example
+
+```js
+const helmet = require("helmet");
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "https://cdn.example.com"],
+    objectSrc: ["'none'"],
+  },
+}));
+```
+
+### Meta Tag (not recommended for strict enforcement)
+
+```html
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';" />
+```
+
+---
+
+## Tools to Build and Test CSP
+
+- [CSP Evaluator by Google](https://csp-evaluator.withgoogle.com/)
+- [Report URI](https://report-uri.com/)
+- Chrome DevTools → Security panel
+- Mozilla Observatory
+
+---
+
+## Common Pitfalls
+
+- Forgetting `connect-src` for fetch/AJAX
+- Allowing `'unsafe-inline'` without need
+- Not updating hash/nonce when scripts change
+- CSP only via meta (doesn’t protect early content)
+
+---
+
+## Progressive Rollout Strategy
+
+1. Start with `Content-Security-Policy-Report-Only`
+2. Log violations and tune policy
+3. Once stable, switch to enforcing `Content-Security-Policy`
+
+---
+
+## Conclusion: CSP Buys You Time
+
+No site is 100% immune to injection — but CSP makes exploitation **much harder**.
+
+It buys you time.
+
+It warns you early.
+
+And in many cases, it **stops the attack cold**.
+
+Make CSP a part of your security baseline — just like HTTPS, escaping, and linting.
+
+Because defense in depth isn’t optional — it’s essential.
+

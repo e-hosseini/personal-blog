@@ -1,0 +1,162 @@
+---
+title: "Optimize Loading Sequences — Deliver What Matters, First"
+slug: "optimize-loading-sequences"
+category: "Performance"
+tags: ["performance", "loading order", "resource prioritization", "critical path", "progressive rendering"]
+summary: "Discover how to structure and sequence asset loading to prioritize meaningful content. Learn strategies for reducing First Contentful Paint and Largest Contentful Paint by delivering the right bytes first."
+publishedAt: "2022-09-16"
+---
+
+# Optimize Loading Sequences — Deliver What Matters, First
+
+Speed isn’t just about downloading fewer bytes. It’s about downloading the **right bytes** in the **right order**.
+
+Your app might be fast — but if the user sees a blank screen while critical resources load last, they’ll think it’s slow.
+
+**Loading sequence optimization** is the art of delivering:
+- What’s visible first
+- What’s interactive next
+- What’s secondary later
+
+In this guide, we’ll explore:
+- Resource prioritization for fonts, images, scripts
+- HTTP/2 and preload strategies
+- HTML structure, skeleton UIs, and progressive enhancement
+- Real-world sequencing patterns
+- Performance metrics like LCP, FCP, and TTI
+
+---
+
+## Understanding the Critical Path
+
+Every web page has a **critical rendering path**:
+1. Browser loads HTML
+2. Parses `<head>`, downloads scripts/CSS
+3. Builds DOM and CSSOM trees
+4. Renders first paint (FCP)
+5. Shows largest element (LCP)
+6. Allows interaction (TTI)
+
+If your loading sequence blocks steps 3–5, users stare at empty screens.
+
+---
+
+## What Should Load First?
+
+1. **HTML** — render something
+2. **CSS** — styles make content readable
+3. **Critical JS** — hydration and interactivity
+4. **Fonts** — ideally preloaded
+5. **Images above the fold**
+6. **Data for above-the-fold components**
+
+Everything else can wait.
+
+---
+
+## Techniques
+
+### Inline Critical CSS
+
+Inline CSS for above-the-fold components:
+
+```html
+<style>
+  header { display: flex; justify-content: space-between; }
+</style>
+```
+
+Load the rest async.
+
+### Preload Key Assets
+
+```html
+<link rel="preload" href="/fonts/inter.woff2" as="font" crossorigin>
+<link rel="preload" href="/main.js" as="script">
+```
+
+Preload only what’s essential.
+
+### Defer or Async Scripts
+
+```html
+<script src="/analytics.js" async></script>
+<script src="/main.js" defer></script>
+```
+
+Never block rendering for non-critical JS.
+
+---
+
+## JavaScript Execution Order
+
+Prefer:
+- Early hydration of above-the-fold components
+- Delayed hydration or lazy-load for below-the-fold
+- Defer analytics, error tracking, social embeds
+
+Use React.lazy + Suspense + loading indicators to stage rendering.
+
+---
+
+## Image Strategy
+
+- Use `loading="lazy"` on offscreen images
+- Preload hero images
+- Prefer `srcset` for responsive loads
+- Use placeholders (blurhash, LQIP, skeleton)
+
+---
+
+## Data Loading
+
+For dynamic SPAs:
+- Fetch above-the-fold data **in parallel** with component loading
+- Use `Suspense` and `fallback` wisely
+- Preload data using React Query or SWR’s `prefetchQuery`
+
+---
+
+## Real-World Example: Stripe Dashboard
+
+1. Loads core shell + nav instantly
+2. Prefetches customer data + sidebar metrics
+3. Loads charts asynchronously
+4. Lazy-loads less-used features (e.g. export CSV)
+
+Results in fast paint, visible structure, then progressive enhancement.
+
+---
+
+## Performance Metrics That Matter
+
+- **FCP** (First Contentful Paint): earliest feedback
+- **LCP** (Largest Contentful Paint): when content is usable
+- **TTI** (Time to Interactive): input responsiveness
+
+Optimize loading sequence to minimize **LCP** and **TTI**.
+
+---
+
+## Anti-Patterns
+
+- `<script>` blocking before `<body>` paint
+- Lazy-loading above-the-fold content
+- Fetching all data on mount (esp. for tabs not visible)
+- Using custom font without fallback font during render
+- Third-party tags that block TTI
+
+---
+
+## Conclusion: Fast is a Feeling, and Sequence is the Secret
+
+Your app is only as fast as **what the user sees**.
+
+If you prioritize visible content and defer the rest, users perceive speed — even if bytes still flow behind the scenes.
+
+So order your load like you’d order a story:
+
+Start with the most important page.
+
+Then turn it.
+

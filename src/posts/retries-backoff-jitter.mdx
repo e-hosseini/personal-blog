@@ -1,0 +1,170 @@
+---
+title: "Retries with Exponential Backoff + Jitter — Smart Resilience Under Load"
+slug: "retries-backoff-jitter"
+category: "Networking Techniques"
+tags: ["retries", "backoff", "jitter", "network failures", "resilience", "http"]
+summary: "Explore retry strategies with exponential backoff and jitter. Learn how to recover from network failures gracefully without overloading your backend. Practical techniques, patterns, and real-world usage included."
+publishedAt: "2022-12-16"
+---
+
+# Retries with Exponential Backoff + Jitter — Smart Resilience Under Load
+
+Failure is a fact of life in distributed systems. Timeouts, 503s, dropped packets, and throttled endpoints all happen — especially at scale.
+
+The smart answer isn’t to panic or retry immediately. It’s to retry **carefully**, with **increasing delay**, and a bit of **randomness**.
+
+That’s where **exponential backoff + jitter** comes in. It’s a pattern that allows clients to retry failed requests **gradually**, while **avoiding retry storms** that overwhelm already struggling services.
+
+In this deep dive, we’ll cover:
+- Why naive retries are dangerous
+- What exponential backoff is
+- How jitter prevents overload
+- Practical JS patterns for retries
+- Examples from Google, AWS, Stripe, and more
+
+---
+
+## Why Retry?
+
+Sometimes, retrying is the right thing:
+- A flaky mobile network caused a timeout
+- A server briefly returned 500 or 429
+- A connection was dropped during fetch
+- A queue was momentarily full
+
+But:
+- Retrying **immediately** can cause cascading failures
+- Retrying **together** (from many clients) creates a **thundering herd**
+
+---
+
+## Exponential Backoff
+
+Backoff means **waiting longer between retries**.
+
+Exponential backoff increases wait time **geometrically**:
+
+```js
+const delay = (attempt) => Math.pow(2, attempt) * 100;
+```
+
+Retry timeline:
+- Retry 1 → wait 100ms
+- Retry 2 → wait 200ms
+- Retry 3 → wait 400ms
+- Retry 4 → wait 800ms
+
+This gives your servers time to recover — and reduces retry load.
+
+---
+
+## Add Jitter for Safety
+
+But if all clients retry at the same intervals, they still overload the system.
+
+**Jitter** adds randomness to retry delays:
+
+```js
+function backoffWithJitter(attempt) {
+  const base = Math.pow(2, attempt) * 100;
+  return base / 2 + Math.random() * (base / 2);
+}
+```
+
+This **spreads out retry waves** and smooths traffic.
+
+Common jitter modes:
+- **Full jitter**: `Math.random() * base`
+- **Equal jitter**: `base/2 + Math.random() * base/2`
+- **Decorrelated jitter** (AWS): `min(cap, random_between(base, prev_delay * 3))`
+
+---
+
+## Practical Retry Pattern (JavaScript)
+
+```ts
+async function fetchWithRetry(url, retries = 5) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed");
+      return await res.json();
+    } catch (e) {
+      const delay = backoffWithJitter(attempt);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("Retries exhausted");
+}
+```
+
+Use for:
+- GET requests that can safely retry
+- Polling operations
+- Load-on-mount queries
+
+---
+
+## Retry Libraries
+
+- **retry** (npm): retry decorators and policies
+- **axios-retry**: plug into Axios
+- **React Query**: built-in retry w/ backoff
+- **SWR**: retry + exponential delay via `onErrorRetry`
+
+---
+
+## When NOT to Retry
+
+Avoid retries for:
+- **Mutations with side effects** (e.g., payments, sends)
+- **User-generated form submissions** without user feedback
+- **Hard failures** (401, 403, 404 — these don’t magically succeed later)
+
+Use retries only when the failure is likely **transient**.
+
+---
+
+## Real-World Examples
+
+### AWS SDK
+
+- Retries with capped exponential backoff + jitter
+- Configurable retry policies for every SDK
+
+### Stripe
+
+- Retries 429s, 500s with increasing delays
+- Docs warn about safe and unsafe endpoints
+
+### Google APIs
+
+- Retries 5xx and rate limit errors with full jitter
+- Provides `Retry-After` headers for backoff control
+
+---
+
+## Anti-Patterns
+
+- Retry without delay (hammering backend)
+- Fixed delay retry (synchronization storm)
+- Retrying indefinitely (causes cascading failure)
+- Ignoring retryable HTTP headers (`Retry-After`)
+- Failing silently after retries
+
+---
+
+## Conclusion: Fail Slowly, Recover Gracefully
+
+Retrying isn’t just a fallback — it’s a **strategy**.
+
+You’re saying:
+> “We know things fail. Let’s plan for it — without adding chaos.”
+
+Exponential backoff keeps you cautious.
+
+Jitter keeps you fair.
+
+And together, they make your frontend **a better citizen in a distributed world**.
+
+Because when everything goes wrong, **how you retry matters**.
