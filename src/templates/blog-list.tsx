@@ -46,14 +46,14 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
       description="Browse all articles"
     >
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-montserrat font-medium mb-8">Articles</h1>
+        <h1 className="text-3xl font-montserrat font-medium text-gray-900 dark:text-gray-100 mb-8">Articles</h1>
         
         <div className="space-y-6">
           {posts.map((post) => (
-            <article key={post.id} className="border-b border-gray-100 pb-6">
+            <article key={post.id} className="border-b border-gray-100 dark:border-gray-800 pb-6">
               <Link to={post.fields.slug} className="block">
-                <h2 className="text-xl font-montserrat font-medium text-gray-900 mb-2">{post.frontmatter.title}</h2>
-                <div className="flex items-center text-sm text-gray-500 mb-3">
+                <h2 className="text-xl font-montserrat font-medium text-gray-900 dark:text-gray-100 mb-2">{post.frontmatter.title}</h2>
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
                   <span className="mr-3">{post.frontmatter.publishedAt}</span>
                   <div className="flex flex-wrap gap-1">
                     {post.frontmatter.tags.map((tag) => (
@@ -64,7 +64,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
                     ))}
                   </div>
                 </div>
-                <p className="text-gray-600 text-sm">{post.frontmatter.summary}</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">{post.frontmatter.summary}</p>
               </Link>
             </article>
           ))}
@@ -76,7 +76,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
               <Link
                 to={prevPage}
                 rel="prev"
-                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900"
+                className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 ← Previous Page
               </Link>
@@ -88,8 +88,8 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
                   to={i === 0 ? '/articles' : `/articles/page/${i + 1}`}
                   className={`mx-1 px-3 py-1 rounded-lg ${
                     currentPage === i + 1
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-gray-900 dark:bg-gray-700 text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
                   }`}
                 >
                   {i + 1}
@@ -100,7 +100,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
               <Link
                 to={nextPage}
                 rel="next"
-                className="bg-white px-4 py-2 rounded-lg shadow-sm text-gray-600 hover:text-gray-900"
+                className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 Next Page →
               </Link>

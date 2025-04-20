@@ -2,14 +2,15 @@
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
-    "./src/pages/**/*.{js,jsx,ts,tsx}",
-    "./src/components/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{md,mdx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
         'montserrat': ['Montserrat', 'sans-serif'],
         'lato': ['Lato', 'sans-serif'],
+        playfair: ['Playfair Display', 'serif'],
       },
       typography: {
         DEFAULT: {
