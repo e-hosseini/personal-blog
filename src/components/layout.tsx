@@ -89,8 +89,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description, hideFoote
                   <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">
                     Home
                   </Link>
-                  <Link to="/blog" className="hover:text-blue-600 dark:hover:text-blue-400">
-                    Blog
+                  <Link to="/articles" className="hover:text-blue-600 dark:hover:text-blue-400">
+                    Articles
                   </Link>
                   <Link to="/about" className="hover:text-blue-600 dark:hover:text-blue-400">
                     About
