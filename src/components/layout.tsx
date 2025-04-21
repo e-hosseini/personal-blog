@@ -112,28 +112,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description, hideFoote
         {!hideFooter && <Footer />}
         <footer className="border-t border-gray-200 dark:border-gray-800 mt-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-center items-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 © {new Date().getFullYear()} Ehsan Hosseini. All rights reserved.
               </p>
-              <div className="flex space-x-4">
-                <a
-                  href="https://twitter.com/yourusername"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                >
-                  Twitter
-                </a>
-                <a
-                  href="https://github.com/yourusername"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                >
-                  GitHub
-                </a>
-              </div>
             </div>
           </div>
         </footer>

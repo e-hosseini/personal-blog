@@ -54,9 +54,7 @@ const Footer: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="mt-16 pt-8 border-t border-gray-100 dark:border-gray-800">
-          <p className="text-gray-500 dark:text-gray-400 text-center">© {new Date().getFullYear()} Ehsan Hosseini. All rights reserved.</p>
-        </div>
+        
       </div>
     </footer>
   );

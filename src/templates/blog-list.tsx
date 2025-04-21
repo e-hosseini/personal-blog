@@ -51,7 +51,7 @@ const BlogListTemplate: React.FC<BlogListTemplateProps> = ({ data, pageContext }
         <div className="space-y-6">
           {posts.map((post) => (
             <article key={post.id} className="border-b border-gray-100 dark:border-gray-800 pb-6">
-              <Link to={post.fields.slug} className="block">
+              <Link to={post.fields.slug} className="block bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
                 <h2 className="text-xl font-montserrat font-medium text-gray-900 dark:text-gray-100 mb-2">{post.frontmatter.title}</h2>
                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
                   <span className="mr-3">{post.frontmatter.publishedAt}</span>

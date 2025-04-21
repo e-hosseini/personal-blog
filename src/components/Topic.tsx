@@ -16,13 +16,13 @@ const Topic: React.FC<TopicProps> = ({ tag, isActive = false, className = '', co
       to={`/tags/${normalizedTag}`}
       className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
         isActive
-          ? 'bg-gray-900 text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          ? 'bg-gray-900 dark:bg-gray-700 text-white'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
       } ${className}`}
     >
       {tag}
       {count !== undefined && (
-        <span className="ml-1 text-gray-500">({count})</span>
+        <span className="ml-1 text-gray-500 dark:text-gray-400">({count})</span>
       )}
     </Link>
   );
