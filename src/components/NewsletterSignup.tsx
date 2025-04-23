@@ -62,7 +62,7 @@ const NewsletterSignup: React.FC = () => {
             <input name="bot-field" />
           </div>
           
-          <div className="flex-1 flex gap-3">
+          <div className="flex-1 flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               name="name"
@@ -86,7 +86,7 @@ const NewsletterSignup: React.FC = () => {
           <button
             type="submit"
             disabled={status === 'submitting'}
-            className="whitespace-nowrap px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-gray-300 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:text-white dark:bg-gray-600 dark:hover:bg-gray-500 dark:focus:ring-gray-500 disabled:opacity-50"
+            className="w-full sm:w-auto whitespace-nowrap px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-gray-300 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:text-white dark:bg-gray-600 dark:hover:bg-gray-500 dark:focus:ring-gray-500 disabled:opacity-50"
           >
             {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
           </button>
