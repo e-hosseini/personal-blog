@@ -1,0 +1,172 @@
+---
+title: "User Journey Tracking — From First Click to Final Action"
+slug: "monitoring-user-journey-tracking"
+category: "Monitoring"
+tags: ["monitoring", "analytics", "journey", "tracking", "ux"]
+summary: "User journey tracking gives visibility into how users navigate your product. Learn how to map flows, capture meaningful events, and correlate UX behavior with outcomes."
+publishedAt: "2024-01-10"
+---
+
+# User Journey Tracking — From First Click to Final Action
+
+You know your user signed up. But how did they get there?
+
+Which pages did they view? What confused them? Where did they drop off?
+
+**User journey tracking** answers these questions by capturing how people move through your product — not just what they do, but **in what order**, and **why it matters**.
+
+It’s about connecting:
+- Page views
+- Interactions
+- Events
+- Time and context
+
+To tell the story of **each user session** — and use that to build better products.
+
+---
+
+## Why Track User Journeys?
+
+- Understand onboarding flows
+- Spot conversion drop-offs
+- Investigate rage clicks and churn patterns
+- Correlate UX with revenue
+- Improve path-based A/B testing
+
+User journeys show **intent and friction**, not just outcomes.
+
+---
+
+## How It Works
+
+### Session Identification
+
+Each session has:
+- Unique session ID
+- Timestamps
+- Optional user ID (if authenticated)
+
+### Event Logging
+
+Capture:
+- Page views
+- Button clicks
+- Search usage
+- Form submissions
+- Scrolls or hovers
+
+### Metadata
+
+Include:
+- URL, title, referrer
+- Browser, OS, device
+- Custom app state (e.g. cart count, auth status)
+
+---
+
+## Tools for Tracking Journeys
+
+- **Segment + Amplitude** — capture → transform → analyze
+- **Mixpanel** — funnels and event tracking
+- **PostHog** — self-hosted analytics and path tracking
+- **Heap** — auto-captures click paths and UI events
+- **LogRocket / FullStory** — session replays + interaction logs
+
+---
+
+## Custom Implementation
+
+```js
+function trackEvent(name, metadata = {}) {
+  sendToBackend({
+    type: "event",
+    name,
+    metadata,
+    timestamp: Date.now(),
+    sessionId: getSessionId()
+  });
+}
+```
+
+### Use Example
+
+```js
+trackEvent("page_view", { path: "/pricing" });
+trackEvent("clicked_start_trial");
+trackEvent("signup_completed");
+```
+
+Now you can analyze journeys like:
+
+```
+Landing Page → Pricing → Start Trial → Signup → Dashboard
+```
+
+---
+
+## Visualizing Journeys
+
+- Sankey charts (paths)
+- Funnels (conversion analysis)
+- Heatmaps (attention focus)
+- Session replays (context)
+
+Use to answer:
+- Where do users stall?
+- What paths lead to conversion?
+- Which flows show rage clicking?
+
+---
+
+## Real-World Examples
+
+### Netflix
+
+- Tracks navigation to identify friction (e.g. “where users stall before playback”)
+- A/B tests based on journey segments
+
+### Spotify
+
+- Logs listening session flows
+- Tracks onboarding and interaction across platforms
+
+### Notion
+
+- Measures path to first note/document
+- Optimizes onboarding with journey maps
+
+---
+
+## Privacy and Consent
+
+- Mask sensitive fields (email, passwords)
+- Obfuscate personal data
+- Ask for consent (GDPR/CCPA)
+- Log generic interactions, not raw keystrokes
+
+---
+
+## Anti-Patterns
+
+- Capturing too little (can’t see full picture)
+- Capturing too much (privacy nightmare)
+- No session ID or timestamp
+- Logging without consistent taxonomy (e.g. "Signup" vs "sign_up" vs "Sign-Up")
+
+---
+
+## Conclusion: Know the Path, Improve the Product
+
+Your users don’t just land and click.
+
+They explore. They compare. They bounce, retry, succeed — or churn.
+
+User journey tracking gives you **clarity**:
+- What works
+- What breaks
+- What drives value
+
+It’s not just analytics — it’s **understanding intent**.
+
+And that’s how you design better experiences.
+

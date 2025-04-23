@@ -1,0 +1,184 @@
+---
+title: "Client-Side Error Logging — Capture What Crashes in the Wild"
+slug: "monitoring-client-side-error-logging"
+category: "Monitoring"
+tags: ["monitoring", "logging", "javascript", "errors", "frontend"]
+summary: "Client-side error logging is essential for catching bugs in production. Learn how to capture uncaught exceptions, promise rejections, stack traces, and more from real users."
+publishedAt: "2023-08-16"
+---
+
+# Client-Side Error Logging — Capture What Crashes in the Wild
+
+When your frontend crashes, users rarely send you an email about it. They just leave.
+
+**Client-side error logging** ensures you know what went wrong — from real browsers, devices, and users.
+
+It captures runtime JavaScript issues like:
+- Uncaught exceptions
+- Promise rejections
+- Resource load failures
+- Runtime errors triggered by APIs, third parties, or UI actions
+
+Without this visibility, your production app is a black box.
+
+---
+
+## Why Log Errors from the Client?
+
+### Bugs in Production ≠ Bugs in Dev
+
+- Dev environments are clean, fast, modern
+- Real users run on laggy networks, outdated browsers, low-end devices
+- Real-world issues don’t show up in QA
+
+Client-side logging reveals:
+- Unknown edge cases
+- Silent failures
+- Broken 3rd party scripts
+- Framework-specific runtime errors
+
+---
+
+## What to Capture
+
+1. **Uncaught Errors**
+   - Via `window.onerror`
+   - Syntax/runtime exceptions
+
+2. **Unhandled Promise Rejections**
+   - Via `window.onunhandledrejection`
+   - Catch async issues
+
+3. **Resource Failures**
+   - `<img onerror>`, script load errors
+   - CDN issues, typoed paths
+
+4. **Stack Traces**
+   - Minified or sourcemapped
+   - Line/column numbers
+
+5. **User Context**
+   - OS, browser, device
+   - Route/page/component
+   - Clicks before error
+
+---
+
+## Minimal Example
+
+```js
+window.onerror = function (message, source, lineno, colno, error) {
+  sendToBackend({
+    type: 'error',
+    message,
+    stack: error?.stack,
+    source,
+    lineno,
+    colno
+  });
+};
+
+window.onunhandledrejection = function (event) {
+  sendToBackend({
+    type: 'promise',
+    reason: event.reason,
+    stack: event.reason?.stack
+  });
+};
+```
+
+---
+
+## Enhancing with Framework Hooks
+
+### React
+
+Use an error boundary:
+
+```tsx
+class ErrorBoundary extends React.Component {
+  componentDidCatch(error, info) {
+    logError({ error, info });
+  }
+  render() {
+    return this.props.children;
+  }
+}
+```
+
+### Vue
+
+```js
+app.config.errorHandler = (err, vm, info) => {
+  sendToLoggingService({ err, info });
+};
+```
+
+---
+
+## Sending Logs to the Backend
+
+Use:
+- `fetch()` or `navigator.sendBeacon()` for async dispatch
+- Batched log uploads for performance
+- JSON with browser metadata
+
+Store in:
+- Your own logging endpoint
+- External tools (Sentry, LogRocket, Bugsnag)
+
+---
+
+## Sourcemaps = Real Debuggability
+
+Minified errors are unreadable:
+
+```text
+Uncaught TypeError: Cannot read properties of undefined at main.min.js:1:9243
+```
+
+Upload sourcemaps to your logging tool or server, so you can get:
+
+```text
+TypeError: Cannot read property 'name' of undefined
+  at ProductCard.tsx:45:12
+```
+
+---
+
+## Real-World Use: Sentry
+
+- Tracks `onerror`, `onunhandledrejection`
+- Resolves sourcemaps automatically
+- Groups duplicate errors
+- Shows affected users, devices, browsers
+
+### Other tools:
+- Bugsnag
+- LogRocket
+- Raygun
+- TrackJS
+
+---
+
+## Anti-Patterns
+
+- Logging without batching (too many requests)
+- Missing sourcemaps
+- Not including user context (page, action)
+- Silencing all errors (`try/catch` without rethrow)
+- Logging to `console.log` only (not persisted)
+
+---
+
+## Conclusion: Capture the Chaos
+
+You can't fix what you don't see.
+
+Client-side error logging turns invisible crashes into actionable insights. It catches:
+- Real bugs
+- Real users
+- Real stacks
+
+So you can ship with confidence — not just hope.
+

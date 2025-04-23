@@ -1,0 +1,189 @@
+---
+title: "Session Replay Tools — Watch What Your Users See"
+slug: "monitoring-session-replay-tools"
+category: "Monitoring"
+tags: ["monitoring", "session replay", "ux", "analytics", "debugging"]
+summary: "Session replay tools let you record and replay real user sessions, helping you understand user behavior, UI bugs, and UX friction. Learn how they work, use cases, and integration best practices."
+publishedAt: "2024-02-07"
+---
+
+# Session Replay Tools — Watch What Your Users See
+
+Imagine debugging a support ticket not with logs — but by literally **watching** what the user did.
+
+What they clicked. What they hovered. What they typed. When the page glitched.
+
+That’s what **session replay tools** provide: a playback of the user experience as it actually happened — DOM events, UI state, scrolls, inputs, errors, and more.
+
+---
+
+## What is Session Replay?
+
+Session replay tools record the browser session in real-time by capturing:
+- DOM mutations
+- User events (clicks, inputs, scrolls)
+- Network activity
+- Console errors
+- Performance metrics
+
+They **reconstruct the session** in a sandboxed viewer so you can replay it like a video — with full interaction metadata.
+
+It’s like having a security camera for your app.
+
+---
+
+## Why Use Session Replay?
+
+### For Engineering
+
+- Debug UI bugs you can’t reproduce
+- See what triggered errors and stack traces
+- Diagnose state mismatches or component failures
+
+### For Product/UX
+
+- Discover rage clicks, dead zones
+- Analyze failed funnels
+- Watch churn moments in real time
+
+### For Support
+
+- See exactly what the user did
+- Reduce back-and-forth
+- Attach sessions to support tickets
+
+---
+
+## Leading Tools
+
+- **LogRocket**
+- **FullStory**
+- **Hotjar**
+- **Smartlook**
+- **SessionStack**
+- **PostHog** (open source)
+
+These tools often include:
+- Heatmaps
+- Funnels
+- Console log recording
+- Network request tracking
+- DOM diffing
+
+---
+
+## How It Works (Under the Hood)
+
+### DOM Recording
+
+Uses MutationObserver to track DOM changes:
+```js
+const observer = new MutationObserver((mutations) => {
+  // capture DOM diffs
+});
+observer.observe(document.body, { childList: true, subtree: true });
+```
+
+### Event Capture
+
+Hooks into native listeners:
+- `click`, `input`, `keydown`, `scroll`, etc.
+- Uses throttling + batching
+
+### Replay Engine
+
+- Rebuilds DOM from recorded diffs
+- Plays back in an iframe or shadow DOM
+- Syncs with logs and errors
+
+---
+
+## Security & Privacy
+
+Session recording = potential risk.
+
+### Mitigations:
+- Mask sensitive fields (`email`, `password`, `credit card`)
+- Use `inputMask` or `ignoreSelector` configs
+- Anonymize or redact PII
+- Don’t record keystrokes or clipboard
+- Use strict data retention policies
+
+Most tools offer:
+- Visual masking
+- GDPR/CCPA compliance modes
+- In-region data storage
+
+---
+
+## Integration Example (LogRocket)
+
+```html
+<script>
+  window.LogRocket && window.LogRocket.init('your-app-id');
+</script>
+```
+
+Or in React:
+
+```tsx
+import LogRocket from 'logrocket';
+LogRocket.init('your-org/your-app');
+```
+
+Connect with:
+- Redux devtools
+- Error tracking (e.g. Sentry)
+- Auth/session IDs
+
+---
+
+## Real-World Examples
+
+### Canva
+
+- Tracks UI pain points in their complex editor
+- Combines replay + logs for error root cause
+
+### Coinbase
+
+- Uses replay to triage support tickets
+- Replays show device/browser-specific bugs
+
+### Slack
+
+- Internal replay tooling for crash reproduction
+- Helps validate layout/render issues on legacy devices
+
+---
+
+## Anti-Patterns
+
+- Recording without consent (GDPR violation)
+- Exposing raw PII in sessions
+- No sampling → performance issues
+- Relying only on replay (no structured logs)
+
+---
+
+## Best Practices
+
+- Mask sensitive fields (`input[type=password]`, `#ssn`)
+- Use user/session IDs for linking with logs
+- Sample by traffic volume or error type
+- Limit replay retention to 30–90 days
+- Integrate with error/logging dashboards
+
+---
+
+## Conclusion: Replay the Truth
+
+Session replay doesn’t replace logs — it **augments them with narrative**.
+
+It gives you context:
+- Why the user clicked
+- Where the UI broke
+- What the experience really felt like
+
+It’s empathy at scale — for your users and your debugging.
+

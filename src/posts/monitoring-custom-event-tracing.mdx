@@ -1,0 +1,125 @@
+---
+title: "Custom Event Tracing — A Detailed Guide to Monitoring What Matters"
+slug: "monitoring-custom-event-tracing"
+category: "Monitoring"
+tags: ["monitoring", "tracing", "events", "observability", "frontend"]
+summary: "Dive into the world of custom event tracing and learn how to instrument and capture user and system behavior, leading to better observability of your frontend applications."
+publishedAt: "2023-08-30"
+---
+
+# Custom Event Tracing — A Detailed Guide to Monitoring What Matters
+
+In the realm of frontend development, performance metrics are a key indicator of an application's health. While these metrics are incredibly useful, they often fall short when it comes to tracking specific user interactions or system behavior. This is where **Custom Event Tracing** comes into play.
+
+Custom Event Tracing allows you to define, record, and analyze **domain-specific events** in your frontend application, providing a microscopic view of user interactions and system behavior. These events could range from a user clicking an 'Add to Cart' button, the time taken from a search query to the rendering of results, or the time it takes from login initiation to the completion of a redirect.
+
+By introducing custom event tracing into your codebase, you're effectively putting the user experience at the forefront of your observability strategy. Instead of solely relying on metrics exposed by the browser, you're now able to measure metrics that have a direct influence on your users' experience.
+
+## Why You Need Custom Tracing
+
+Custom event tracing fills in the gaps left by generic metrics by providing a **business context** to the observability of your application. While Real User Monitoring (RUM) and Web Vitals provide a wealth of information, they don't offer insights into the internal performance breakdowns that occur during a user's journey through your application.
+
+By employing custom tracing, you gain visibility into **User Experience (UX) flows**, providing you with answers to business-critical questions such as:
+- Did the checkout process complete successfully?
+- Was the search functionality responsive?
+- How long did the onboarding process take?
+
+## Anatomy of a Custom Trace
+
+A custom trace is composed of four elements:
+- **Name**: This is a descriptive identifier for the trace (e.g., `checkout_complete`, `api_call_start`).
+- **Timestamps**: These mark the start and end of the trace.
+- **Metadata**: This includes additional information like user info, environment details, and payload.
+- **Span or correlation ID**: Although optional, this is useful for linking distributed traces.
+
+These traces can be logged to internal logging APIs, observability tools like Datadog, Sentry, or Elastic, or even your console when debugging.
+
+## Basic Implementation
+
+Here's a basic implementation of a custom trace in JavaScript:
+
+```js
+function traceEvent(name, metadata = {}) {
+  const start = performance.now();
+  return {
+    end: () => {
+      const end = performance.now();
+      sendToBackend({
+        name,
+        duration: end - start,
+        ...metadata,
+        timestamp: Date.now()
+      });
+    }
+  };
+}
+```
+
+### Usage
+
+This function can be invoked to start a trace and end it once the operation is complete:
+
+```js
+const trace = traceEvent("add_to_cart", { productId: 123 });
+// ... perform operations
+trace.end();
+```
+
+## Tracing Page Flows
+
+Tracing page flows is crucial to understand how your application performs during different stages of a user's journey. Here's an example of how you can trace the duration of a search operation:
+
+```js
+performance.mark("search-start");
+fetch("/api/search?q=query")
+  .then(res => res.json())
+  .then(() => {
+    performance.mark("search-end");
+    performance.measure("search-duration", "search-start", "search-end");
+  });
+```
+
+## Instrumenting Business Logic
+
+Custom event tracing can be used to instrument business logic, enabling you to measure the time taken for operations like:
+- The checkout process from click to confirmation
+- The load latency of a modal
+- Multi-step flows like onboarding or surveys
+
+In a React application, this could be implemented in a `useEffect` hook as follows:
+
+```tsx
+useEffect(() => {
+  const trace = traceEvent("onboarding_step_1_start");
+  return () => trace.end();
+}, []);
+```
+
+## Where to Send the Data
+
+The data from these custom traces can be sent to various endpoints:
+- `navigator.sendBeacon()` for asynchronous logs
+- `fetch()` for batch processing
+- Logging tools like Sentry, Datadog, or NewRelic, using the `trace_id`
+- Self-hosted Prometheus-compatible endpoint
+
+## Real-World Example: Stripe and GitHub
+
+Prominent tech companies like Stripe and GitHub have successfully employed custom event tracing in their applications. Stripe traces every payment flow, from the button click to the transaction result, with custom spans for fraud checks and card verification. They also correlate this with backend latency for a holistic view of the process.
+
+GitHub, on the other hand, traces code loading and comment submission, with real-time logs grouped by user session.
+
+## Anti-Patterns
+
+While custom event tracing is a powerful tool, there are certain anti-patterns to be aware of:
+- Not using unique IDs, which makes span correlation impossible
+- Tracing everything, which can lead to noise and information overload
+- Tracing without timestamps, which fails to provide the timeline of events
+- Logging too late and missing early interactions
+- Not including user context like the route, browser, and device
+
+## Conclusion: Track What You Build
+
+Custom event tracing allows you to take **ownership over observability**. By tracking the metrics that matter to your application and users, you're not guessing why the UX feels slow — you're measuring it.
+
+From cart to checkout, from search to result, from interaction to insight, you can create a comprehensive map of your application's behavior. This empowers you to **trace your product, not just your code**.

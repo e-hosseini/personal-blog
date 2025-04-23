@@ -1,0 +1,177 @@
+---
+title: "Performance API — Measuring with Precision in the Browser"
+slug: "monitoring-performance-api"
+category: "Monitoring"
+tags: ["performance", "monitoring", "timing", "web api", "frontend"]
+summary: "The Performance API provides fine-grained, high-resolution timing data from the browser. Learn how to use Navigation Timing, Resource Timing, and more to track real user performance accurately."
+publishedAt: "2023-08-23"
+---
+
+# Performance API — Measuring with Precision in the Browser
+
+If you're serious about web performance, you need more than a stopwatch.
+
+The **Performance API** is a suite of browser interfaces that let you measure:
+- Navigation start to content load
+- Resource load timings (scripts, images, fonts)
+- Custom user events and spans
+- Key web vitals (like LCP, FCP, TTFB)
+
+It’s a cornerstone of **Real User Monitoring (RUM)** and a low-level tool for **custom instrumentation**.
+
+---
+
+## Key Components of the Performance API
+
+### 1. Navigation Timing
+
+Gives precise timestamps from page load lifecycle:
+
+```js
+const nav = performance.getEntriesByType("navigation")[0];
+console.log("Time to Interactive:", nav.domInteractive);
+```
+
+Metrics include:
+- `domInteractive`
+- `domContentLoadedEventEnd`
+- `loadEventEnd`
+- `redirectStart`, `redirectEnd`
+- `responseStart`, `responseEnd`
+- `fetchStart`
+
+---
+
+### 2. Resource Timing
+
+Tracks how long each resource took to load:
+
+```js
+const entries = performance.getEntriesByType("resource");
+entries.forEach(res => {
+  console.log(res.name, res.duration);
+});
+```
+
+Metrics include:
+- Resource fetch time
+- DNS, TCP, and SSL breakdowns
+- Connection reuse
+
+Useful for identifying:
+- Slow images or fonts
+- Blocking JS scripts
+- Long-running fetches
+
+---
+
+### 3. Paint Timing
+
+For initial render:
+
+```js
+const paints = performance.getEntriesByType("paint");
+paints.forEach(p => console.log(p.name, p.startTime));
+```
+
+Includes:
+- `first-paint`
+- `first-contentful-paint` (FCP)
+
+These feed into metrics like Web Vitals.
+
+---
+
+### 4. Long Tasks (PerformanceObserver)
+
+Catch tasks > 50ms that block the main thread:
+
+```js
+new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.log("Long Task:", entry);
+  }
+}).observe({ type: "longtask", buffered: true });
+```
+
+Ideal for identifying jank, layout thrashing, and event blocking.
+
+---
+
+### 5. Custom Marks and Measures
+
+Add your own spans:
+
+```js
+performance.mark("start-api-call");
+
+// later...
+performance.mark("end-api-call");
+performance.measure("api-duration", "start-api-call", "end-api-call");
+```
+
+Great for:
+- Page transitions
+- React hydration
+- Form submissions
+- Button click → response time
+
+---
+
+## Real-World Use Cases
+
+### Google
+
+- Web Vitals built on top of Performance API
+- Chrome's Lighthouse + CrUX rely on these metrics
+
+### Shopify
+
+- Tracks React hydration and LCP via marks
+- Collects metrics for storefront dashboard visibility
+
+### Airbnb
+
+- Uses resource timing to detect slow-loading critical assets
+- Correlates with CDN performance
+
+---
+
+## Tools Built on Performance API
+
+- `web-vitals` (Google)
+- `perfume.js`
+- RUM dashboards (Vercel, Calibre)
+- Custom logging via `navigator.sendBeacon`
+
+---
+
+## Best Practices
+
+- Use `PerformanceObserver` for async metrics
+- Batch and buffer logs before sending
+- Use high-resolution `performance.now()` for relative timing
+- Combine with user context (device, route, interaction)
+
+---
+
+## Anti-Patterns
+
+- Measuring performance only in dev mode
+- Ignoring long tasks
+- Over-measuring (log spam, perf degradation)
+- Relying solely on `Date.now()` (not high-res)
+
+---
+
+## Conclusion: Know What, When, and Why
+
+The Performance API gives you **developer-grade instrumentation** for user experience.
+
+It helps answer questions like:
+- Why did this route feel slow?
+- Which resources delayed the page?
+- What blocked interaction?
+
+It’s the core of field data — and it’s in your browser, ready to help.
+

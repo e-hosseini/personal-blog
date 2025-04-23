@@ -1,0 +1,172 @@
+---
+title: "Real User Monitoring (RUM) — Measuring What Actually Happens"
+slug: "real-user-monitoring"
+category: "Monitoring"
+tags: ["monitoring", "performance", "rum", "observability", "web vitals"]
+summary: "Real User Monitoring (RUM) is the practice of collecting performance and experience data from actual users. Learn how RUM works, why it's essential, and how it integrates with modern web performance."
+publishedAt: "2023-08-02"
+---
+
+# Real User Monitoring (RUM) — Measuring What Actually Happens
+
+You’ve optimized bundles. Crushed Lighthouse scores. Tuned Core Web Vitals.
+
+But what’s really happening in the field?
+
+**Real User Monitoring (RUM)** captures performance, errors, and behavioral data **from actual users**, in actual browsers, across real networks, devices, and environments.
+
+Unlike lab tools (Lighthouse, WebPageTest), RUM gives you:
+- True user experience across demographics
+- Live insight into performance regressions
+- User-centric debugging signals
+- UX data that aligns with business metrics
+
+This article explores:
+- What RUM is and why it matters
+- How it differs from synthetic monitoring
+- Tools and techniques for implementation
+- Metrics to collect (including Web Vitals)
+- Real-world use cases
+
+---
+
+## What Is Real User Monitoring?
+
+RUM is a passive data collection technique that uses small scripts to observe:
+- Page loads
+- Performance timings (LCP, INP, CLS)
+- JavaScript errors
+- Resource usage
+- Navigation patterns
+
+It works by embedding a **JS beacon** into your app, which records and sends telemetry to an analytics backend.
+
+RUM data helps teams:
+- Detect slowness across device/network types
+- Compare real-world vs lab performance
+- Attribute issues to geography, browser, etc.
+- Correlate behavior and business KPIs
+
+---
+
+## RUM vs Synthetic Monitoring
+
+| Feature         | RUM (Real Users)           | Synthetic (Bots)               |
+|-----------------|----------------------------|--------------------------------|
+| Data Source     | Real users' devices        | Simulated lab environments     |
+| Timing Accuracy | Variable (real world)      | Precise and repeatable         |
+| Use Case        | Experience validation      | Regression testing             |
+| Volume          | High (continuous flow)     | Controlled, low-frequency      |
+| Examples        | SpeedCurve RUM, Vercel     | Lighthouse CI, WebPageTest     |
+
+In practice: use **both**.
+
+---
+
+## What Metrics Should You Collect?
+
+### Web Vitals (the core of RUM)
+
+- **LCP (Largest Contentful Paint)** — Visual readiness
+- **INP (Interaction to Next Paint)** — Interactivity delay
+- **CLS (Cumulative Layout Shift)** — Layout stability
+
+### Navigation Timing
+
+From the Performance API:
+- `domInteractive`
+- `loadEventEnd`
+- `firstPaint`
+
+### Custom Metrics
+
+- Time to login/signup
+- Search latency
+- Conversion step timings
+
+### Errors
+
+- Uncaught JS errors (`window.onerror`)
+- Promise rejections
+- API failure rates
+
+---
+
+## Tools for RUM
+
+- **Google Chrome UX Report (CrUX)** — aggregate field data
+- **SpeedCurve** — commercial RUM with dashboards
+- **Vercel Analytics** — Web Vitals from real users
+- **Calibre, Raygun, Akamai mPulse**
+- **Custom scripts + PerformanceObserver**
+
+---
+
+## Basic Implementation
+
+### Using web-vitals JS lib
+
+```ts
+import { getLCP, getCLS, getINP } from 'web-vitals';
+
+getLCP(console.log);
+getCLS(console.log);
+getINP(console.log);
+```
+
+Send the results to your own backend or analytics platform.
+
+---
+
+## Real-World Examples
+
+### Vercel
+
+- Collects Web Vitals per deployment
+- Uses per-page RUM to detect performance regressions
+
+### Shopify
+
+- Embedded RUM via Boomerang
+- Measures time-to-interaction across merchant dashboards
+
+### Google Search
+
+- Feeds anonymized user performance data back into CrUX dataset
+- Web Vitals feed into ranking signals
+
+---
+
+## Privacy and Consent
+
+RUM should:
+- Avoid PII (mask URLs, inputs)
+- Use sampling and anonymization
+- Comply with GDPR/CCPA
+
+Use `navigator.sendBeacon()` or `fetch()` with consent-aware gating.
+
+---
+
+## Anti-Patterns
+
+- Using RUM data without segmenting by device/network
+- Trusting averages (use p75, p90, p99)
+- Logging errors without stack traces or context
+- Sending high-volume data on every user interaction
+
+---
+
+## Conclusion: Measure What Users Actually Experience
+
+RUM gives you **truth from the trenches**.
+
+It’s your telemetry from the browser’s front lines — where your real users live.
+
+When paired with synthetic tools and good observability, RUM lets you:
+- Optimize based on truth
+- Detect regressions before users complain
+- Align performance with business goals
+
+Because the only performance that matters is the one **your users actually feel**.
+

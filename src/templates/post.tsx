@@ -4,6 +4,7 @@ import { MDXProvider } from '@mdx-js/react';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/layout';
 import Topic from '../components/Topic';
+import NewsletterSignup from '../components/NewsletterSignup';
 import { StaticImage } from 'gatsby-plugin-image';
 
 // Define components for MDX
@@ -208,6 +209,11 @@ const PostTemplate = ({ data, children }: PostTemplateProps) => {
           <MDXProvider components={components}>
             {children}
           </MDXProvider>
+        </div>
+
+        {/* Newsletter Signup */}
+        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+          <NewsletterSignup />
         </div>
 
         {/* Related Posts Section */}

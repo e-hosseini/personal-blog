@@ -1,0 +1,144 @@
+---
+title: "In-depth Analysis of Client-Side Error Logging — A Comprehensive Guide to Unveiling What Crashes in the Wild"
+slug: "advanced-monitoring-client-side-error-logging"
+category: "Monitoring"
+tags: ["monitoring", "logging", "javascript", "errors", "frontend"]
+summary: "Client-side error logging is indispensable for detecting bugs in production. Discover how to capture uncaught exceptions, promise rejections, stack traces, and more from real users."
+publishedAt: "2023-08-16"
+---
+
+# In-depth Analysis of Client-Side Error Logging — A Comprehensive Guide to Unveiling What Crashes in the Wild
+
+When the frontend of your application crashes, it's a rare occurrence that users will take the time to email you about the issues they're encountering. More often than not, they'll simply abandon the session. This is where the power of **client-side error logging** comes into play. It allows you to understand what went wrong — directly from actual browsers, devices, and users.
+
+Client-side error logging helps in capturing runtime JavaScript issues like:
+- Uncaught exceptions
+- Promise rejections
+- Resource load failures
+- Runtime errors triggered by APIs, third parties, or user interface actions
+
+Without this level of visibility, your production application is akin to a black box, where understanding what's going wrong on a granular level is a challenge.
+
+## The Rationale Behind Logging Errors from the Client
+
+It's important to understand that bugs encountered in production are starkly different from those found during development.
+
+- Development environments are typically clean, fast, and modern.
+- Real users, on the other hand, often operate on slow networks, use outdated browsers, or low-end devices.
+- Real-world issues often don't show up in Quality Assurance (QA) testing.
+
+Client-side logging helps in revealing:
+- Unknown edge cases that didn't come up during testing.
+- Silent failures that can degrade user experience without any overt signs.
+- Broken 3rd party scripts that might be causing unexpected behavior.
+- Framework-specific runtime errors that might be unique to the framework you're using.
+
+## Key Elements to Capture
+
+1. **Uncaught Errors**: These can be captured via `window.onerror`. They typically include syntax/runtime exceptions that aren't handled by your code.
+2. **Unhandled Promise Rejections**: These can be captured via `window.onunhandledrejection` and can help catch async issues that might otherwise go unnoticed.
+3. **Resource Failures**: These include image load errors (`<img onerror>`), script load errors, etc. They can help identify problems with your CDN, mistyped paths, and more.
+4. **Stack Traces**: These can be either minified or sourcemapped and include line/column numbers for easier debugging.
+5. **User Context**: This includes the operating system, browser, device, route/page/component, and user actions before the error.
+
+## Minimal Example
+
+```js
+window.onerror = function (message, source, lineno, colno, error) {
+  sendToBackend({
+    type: 'error',
+    message,
+    stack: error?.stack,
+    source,
+    lineno,
+    colno
+  });
+};
+
+window.onunhandledrejection = function (event) {
+  sendToBackend({
+    type: 'promise',
+    reason: event.reason,
+    stack: event.reason?.stack
+  });
+};
+```
+
+In the above example, we are setting up global handlers for `window.onerror` and `window.onunhandledrejection` events. When an uncaught error or unhandled promise rejection occurs, these handlers are triggered, capturing the error details and sending them to the backend.
+
+## Enhancing with Framework Hooks
+
+Different JavaScript frameworks provide hooks for error handling which can be leveraged to capture errors in a more framework-specific manner.
+
+### React
+
+In React, an error boundary can be used:
+
+```tsx
+class ErrorBoundary extends React.Component {
+  componentDidCatch(error, info) {
+    logError({ error, info });
+  }
+  render() {
+    return this.props.children;
+  }
+}
+```
+
+In this example, `componentDidCatch` is a lifecycle method in React that catches JavaScript errors anywhere in the child component tree. When an error is caught, the `logError` function is called with the error and additional information about the error's origin.
+
+### Vue
+
+In Vue.js, you can set a global error handler:
+
+```js
+app.config.errorHandler = (err, vm, info) => {
+  sendToLoggingService({ err, info });
+};
+```
+
+Here, `app.config.errorHandler` is a global error handler for Vue.js. When an error is thrown within a Vue component, this handler is triggered, sending the error details to a logging service.
+
+## Sending Logs to the Backend
+
+This can be done using `fetch()` or `navigator.sendBeacon()` for asynchronous dispatch. It's advisable to batch log uploads for performance optimization. The data sent should be in JSON format, containing browser metadata for context.
+
+These logs can be stored in:
+- Your own logging endpoint
+- External tools like Sentry, LogRocket, and Bugsnag
+
+## Sourcemaps = Real Debuggability
+
+Minified errors are unreadable:
+
+```text
+Uncaught TypeError: Cannot read properties of undefined at main.min.js:1:9243
+```
+
+By uploading sourcemaps to your logging tool or server, you can get a much more informative error message:
+
+```text
+TypeError: Cannot read property 'name' of undefined
+  at ProductCard.tsx:45:12
+```
+
+## Real-World Use: Sentry
+
+- Sentry automatically tracks `onerror` and `onunhandledrejection` events.
+- It also resolves sourcemaps automatically.
+- It groups duplicate errors for easier debugging.
+- It shows affected users, devices, and browsers for better context.
+
+Other notable tools include Bugsnag, LogRocket, Raygun, and TrackJS.
+
+## Anti-Patterns
+
+- Logging without batching can lead to too many requests, negatively affecting performance.
+- Missing sourcemaps can make error messages difficult to understand.
+- Not including user context (page, action) can make it hard to reproduce and fix errors.
+- Silencing all errors with `try/catch` without rethrowing can hide potential issues.
+- Logging to `console.log` only doesn't persist logs, making post-mortem analysis impossible.
+
+## Conclusion: Capture the Chaos
+
+The maxim "You can't fix what you don't see" is particularly true in the realm of client-side error logging. It turns invisible crashes into actionable insights by catching bugs from real users, with real stacks. Thus, it allows you to ship with confidence — not just hope.

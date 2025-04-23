@@ -3,6 +3,7 @@ import { Link, graphql } from 'gatsby';
 import Layout from '../components/layout';
 import { StaticImage } from 'gatsby-plugin-image';
 import Topic from '../components/Topic';
+import NewsletterSignup from '../components/NewsletterSignup';
 
 interface IndexPageProps {
   data: {
@@ -82,6 +83,10 @@ const IndexPage: React.FC<IndexPageProps> = ({ data }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mb-12">
+          <NewsletterSignup />
         </div>
 
         <div>

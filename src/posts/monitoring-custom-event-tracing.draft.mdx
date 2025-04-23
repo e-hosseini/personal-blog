@@ -1,0 +1,154 @@
+---
+title: "Custom Event Tracing — Observe What Matters to You"
+slug: "monitoring-custom-event-tracing"
+category: "Monitoring"
+tags: ["monitoring", "tracing", "events", "observability", "frontend"]
+summary: "Custom event tracing lets you measure critical flows in your app, from button clicks to API latency. Learn how to instrument, capture, and analyze user and system behavior for better observability."
+publishedAt: "2023-08-30"
+---
+
+# Custom Event Tracing — Observe What Matters to You
+
+Performance metrics are great — but sometimes, you want to know **what happens when a user clicks that specific button**, or **how long a search really takes**, or **which API fails in a specific flow**.
+
+That’s where **Custom Event Tracing** comes in.
+
+It’s the ability to define, record, and analyze **domain-specific events** in your frontend:
+- "User clicked Add to Cart"
+- "Search query → results rendered"
+- "Login → redirect completed"
+
+With custom tracing, you **measure what your users care about**, not just what the browser exposes.
+
+---
+
+## Why You Need Custom Tracing
+
+- Generic metrics don’t reflect **business context**
+- RUM and Web Vitals don’t show internal performance breakdowns
+- You need visibility into **UX flows**, not just resource timings
+
+Examples:
+- Did checkout complete?
+- Was search responsive?
+- How long did onboarding take?
+
+---
+
+## Anatomy of a Custom Trace
+
+A trace has:
+- **Name**: `checkout_complete`, `api_call_start`, etc.
+- **Timestamps**: Start and end
+- **Metadata**: User info, environment, payload
+- **Span or correlation ID**: Optional, for distributed trace linking
+
+You log these traces to:
+- Internal logging APIs
+- Observability tools (e.g. Datadog, Sentry, Elastic)
+- Console (for debug)
+
+---
+
+## Basic Implementation
+
+```js
+function traceEvent(name, metadata = {}) {
+  const start = performance.now();
+  return {
+    end: () => {
+      const end = performance.now();
+      sendToBackend({
+        name,
+        duration: end - start,
+        ...metadata,
+        timestamp: Date.now()
+      });
+    }
+  };
+}
+```
+
+### Usage
+
+```js
+const trace = traceEvent("add_to_cart", { productId: 123 });
+// ... do stuff
+trace.end();
+```
+
+---
+
+## Tracing Page Flows
+
+```js
+performance.mark("search-start");
+fetch("/api/search?q=query")
+  .then(res => res.json())
+  .then(() => {
+    performance.mark("search-end");
+    performance.measure("search-duration", "search-start", "search-end");
+  });
+```
+
+---
+
+## Instrumenting Business Logic
+
+- Checkout span from click → confirmation
+- Modal load latency
+- Multi-step flows (onboarding, surveys)
+
+### React example:
+
+```tsx
+useEffect(() => {
+  const trace = traceEvent("onboarding_step_1_start");
+  return () => trace.end();
+}, []);
+```
+
+---
+
+## Where to Send the Data
+
+- `navigator.sendBeacon()` for async logs
+- `fetch()` + batching
+- Log to Sentry/Datadog/NewRelic with `trace_id`
+- Self-hosted Prometheus-compatible endpoint
+
+---
+
+## Real-World Example: Stripe
+
+- Traces every payment flow: from button click to transaction result
+- Custom spans for fraud checks, card verification
+- End-to-end correlation with backend latency
+
+### GitHub
+
+- Traces code loading, comment submission
+- Real-time logs grouped by user session
+
+---
+
+## Anti-Patterns
+
+- No unique IDs (can't correlate spans)
+- Tracing everything (causes noise)
+- Tracing without timestamps
+- Logging too late (miss early interactions)
+- Missing user context (route, browser, device)
+
+---
+
+## Conclusion: Track What You Build
+
+Custom event tracing gives you **ownership over observability**.
+
+You’re not guessing why the UX feels slow. You’re measuring it.
+
+From cart to checkout. From search to result. From interaction to insight.
+
+Build your own map — and **trace your product, not just your code**.
+

@@ -1,0 +1,210 @@
+---
+title: "Frontend Observability with OpenTelemetry — Tracing Beyond the Backend"
+slug: "monitoring-opentelemetry-frontend"
+category: "Monitoring"
+tags: ["monitoring", "observability", "tracing", "opentelemetry", "frontend"]
+summary: "OpenTelemetry is a vendor-neutral standard for observability. Learn how to trace, measure, and correlate frontend spans with backend services for true full-stack visibility."
+publishedAt: "2024-01-17"
+---
+
+# Frontend Observability with OpenTelemetry — Tracing Beyond the Backend
+
+When you think OpenTelemetry, you probably think: backend, APIs, Go, Java, and spans between microservices.
+
+But what if you could:
+- Trace a **user click**
+- Capture when an API call was made
+- Follow that call across services
+- And **connect it back to the frontend interaction that triggered it**
+
+That’s what **frontend observability with OpenTelemetry** unlocks — and it's the **future of full-stack tracing**.
+
+---
+
+## What is OpenTelemetry?
+
+**OpenTelemetry (OTel)** is an open-source observability framework that provides:
+- Unified APIs for generating **metrics**, **logs**, and **traces**
+- Context propagation across systems
+- Vendor-neutral instrumentation
+- Support for JavaScript, Node.js, Python, Go, Java, and more
+
+OTel is governed by CNCF and supported by vendors like:
+- Datadog
+- New Relic
+- Honeycomb
+- Lightstep
+- Grafana
+
+It’s not tied to any APM tool. It’s the **plumbing layer** for telemetry.
+
+---
+
+## Why Frontend + OpenTelemetry?
+
+Traditionally, frontend errors and performance live in tools like Sentry or LogRocket.
+
+Backend spans and metrics go to tools like Datadog or Prometheus.
+
+But what if:
+- Clicking “Submit Order” starts a trace
+- That trace continues through your API
+- Into your backend, DB, and even external services
+- And returns with a unified view of the **entire user journey**
+
+You gain:
+- Unified trace IDs across browser and server
+- Full-stack root cause analysis
+- Performance bottleneck correlation
+- User-centric diagnostics
+
+---
+
+## Basic Architecture
+
+```
+Browser (React, Vue, etc.)
+  ↳ Instrumented via OTel JS SDK
+  ↳ Generates spans for navigation, user actions, API calls
+    ↳ Adds `traceparent` header to outbound fetch/XHR
+      ↳ Backend receives trace context
+        ↳ Backend continues trace with OpenTelemetry SDK
+          ↳ Entire span chain visualized in backend APM
+```
+
+---
+
+## Core Concepts in OpenTelemetry
+
+- **Trace**: A tree of spans representing a request lifecycle
+- **Span**: A single unit of work (e.g., “GET /api/orders”)
+- **Context**: Metadata like trace ID, parent span ID, service name
+- **Exporter**: Where data is sent (e.g., Jaeger, Zipkin, Datadog)
+
+---
+
+## Setting Up Frontend OTel (JavaScript/React)
+
+Install dependencies:
+
+```bash
+npm install @opentelemetry/api @opentelemetry/sdk-trace-web   @opentelemetry/instrumentation-fetch   @opentelemetry/exporter-trace-otlp-http
+```
+
+### Configure tracing:
+
+```js
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+
+const provider = new WebTracerProvider();
+
+provider.addSpanProcessor(new SimpleSpanProcessor(
+  new OTLPTraceExporter({
+    url: 'https://your-observability-platform/v1/traces'
+  })
+));
+
+provider.register();
+
+// Add instrumentation
+new FetchInstrumentation({
+  propagateTraceHeaderCorsUrls: [/your-api.com/],
+});
+```
+
+This sets up:
+- Automatic tracing of all `fetch()` calls
+- Propagation of `traceparent` headers
+- Export of spans to backend collector
+
+---
+
+## Creating Custom Spans
+
+```js
+const tracer = provider.getTracer('my-frontend-app');
+
+const span = tracer.startSpan('user-clicked-login-button');
+// business logic
+span.end();
+```
+
+Use to trace:
+- UI interactions
+- State transitions
+- Route changes
+- Component rendering
+
+---
+
+## Correlating with Backend
+
+Backend must:
+- Use the same OTel trace headers (`traceparent`, `tracestate`)
+- Accept incoming context and link it to its spans
+
+This allows visualization tools (e.g., Jaeger, Honeycomb) to show:
+```
+User Click → API Request → Auth Service → DB Query
+```
+
+All connected by a single trace ID.
+
+---
+
+## Real-World Example: Vercel + OTel
+
+- Frontend spans track hydration and route transitions
+- OTel hooks into middleware, functions, edge handlers
+- Unified traces sent to third-party backend (e.g., Datadog)
+
+### Another: Netflix
+
+- Custom spans from React apps
+- Fetch spans link to backend microservices
+- Combined with logs and metrics for SLA tracking
+
+---
+
+## Exporting to Your Observability Platform
+
+Supported exporters:
+- **OTLP/HTTP** (standard, supported by most vendors)
+- **Console** (for local dev)
+- **Jaeger**, **Zipkin**
+- Vendor SDKs (Datadog, Lightstep, Honeycomb, etc.)
+
+---
+
+## Best Practices
+
+- Name spans clearly (e.g., `user_interaction:search`, `api_call:/products`)
+- Add meaningful attributes (`userId`, `page`, `deviceType`)
+- Use `traceparent` consistently
+- Avoid noise (too many low-value spans)
+- Combine with RUM and Web Vitals
+
+---
+
+## Anti-Patterns
+
+- Tracing only on backend — you miss UX context
+- Frontend spans without correlation IDs
+- Overhead-heavy tracing in tight loops
+- Logging spans instead of exporting
+
+---
+
+## Conclusion: Make the Invisible Visible
+
+Your users don’t see microservices. They see laggy buttons, spinning spinners, and slow screens.
+
+OpenTelemetry brings backend-grade observability to the frontend:
+- Trace user actions
+- Connect UI to API
+- Measure what happens **across the stack**
+
+It’s the glue between DevX and UX — and the future of **full-stack debugging**.
+
