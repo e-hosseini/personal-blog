@@ -34,14 +34,14 @@ const NewsletterSignup: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gray-800 dark:bg-gray-800 rounded-lg shadow-sm p-6">
+    <div className="w-full bg-white border border-gray-200 dark:border-transparent dark:bg-gray-800 rounded-lg dark:shadow-sm p-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-lg font-medium text-gray-100 dark:text-white">Subscribe to our Newsletter</h2>
-          <p className="text-sm text-gray-200 dark:text-gray-300">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Subscribe for Deep Dives</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             {status !== 'success' 
-              ? 'Stay updated with our latest posts and news.'
-              : 'Thanks for subscribing!'
+              ? 'Get exclusive in-depth technical articles and insights directly to your inbox.'
+              : "Welcome! You're now subscribed for deep tech content."
             }
           </p>
         </div>
@@ -70,7 +70,7 @@ const NewsletterSignup: React.FC = () => {
               placeholder="Your name"
               required
               disabled={status === 'submitting'}
-              className="flex-1 rounded-md border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white placeholder-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm px-4 py-2 disabled:opacity-50"
+              className="flex-1 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm px-4 py-2 disabled:opacity-50"
             />
             <input
               type="email"
@@ -79,7 +79,7 @@ const NewsletterSignup: React.FC = () => {
               placeholder="Your email"
               required
               disabled={status === 'submitting'}
-              className="flex-1 rounded-md border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-gray-700 text-white placeholder-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm px-4 py-2 disabled:opacity-50"
+              className="flex-1 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm px-4 py-2 disabled:opacity-50"
             />
           </div>
 
