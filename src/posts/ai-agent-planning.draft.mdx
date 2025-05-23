@@ -1,0 +1,267 @@
+---
+title: "Planning in AI Agents — Teaching Models to Think Ahead"
+slug: "ai-agent-planning"
+category: "AI"
+tags: ["ai", "agents", "planning", "reasoning", "vercel ai"]
+summary: "Planning allows AI agents to deconstruct complex tasks, reason about goals, and execute multi-step workflows. Dive into how agents plan, tools they use, and 10 real-world examples."
+publishedAt: "2024-05-15"
+---
+
+# Planning in AI Agents — Teaching Models to Think Ahead
+
+The difference between a chatbot and an intelligent assistant isn’t its vocabulary — it’s **how it thinks about the future**.
+
+Imagine this: You tell your AI assistant, _“Find me a flight to Tokyo, book a hotel near Shibuya, and schedule reminders for visa processing.”_
+
+A traditional model might try to answer that in one shot — and fail.
+
+An **agent with planning** does something different:
+- Breaks down your goal into discrete steps
+- Understands dependencies (flight first, hotel second)
+- Chooses appropriate tools (e.g., `searchFlights()`, `bookHotel()`)
+- Decides when to act and when to ask
+- Monitors progress and adapts if plans fail
+
+Planning is **not just responding**. It’s charting a course toward a result.
+
+---
+
+## What Is Planning?
+
+In AI, planning is the **deliberate process of deciding how to achieve a goal**.
+
+It involves:
+- Understanding the desired outcome
+- Decomposing the problem into subgoals
+- Deciding the order of operations
+- Assigning tools or strategies to each step
+- Revising when the path fails
+
+It's how humans approach complex tasks — and it's how we teach AI to do the same.
+
+---
+
+## Why LLMs Struggle Without Planning
+
+LLMs trained on static text often respond in a single pass. They’re reactive. Without scaffolding, they:
+- Jump to conclusions
+- Miss dependencies
+- Skip verification
+- Fail to recover from errors
+
+Planning introduces:
+- Deliberation
+- Decomposition
+- Control flow
+- Contextual iteration
+
+---
+
+## Techniques for Planning in Agents
+
+### 1. ReAct (Reasoning + Acting)
+
+The agent alternates between _thinking_ and _doing_.
+
+```text
+Thought: I need to check today’s weather.
+Action: getWeather("Paris")
+
+Observation: Sunny and warm.
+
+Thought: No umbrella needed.
+Response: Looks like clear skies today!
+```
+
+### 2. Chain-of-Thought Prompting
+
+Encourage the model to _think step by step_ before acting.
+
+```text
+To send flowers:
+1. Check recipient’s location
+2. Find nearby florists
+3. Select a bouquet
+4. Schedule delivery
+```
+
+### 3. Tool Planning with Vercel AI SDK
+
+Create tools and let the model choose which to call:
+
+```ts
+const tools = [searchFlights, bookHotel, sendReminder];
+const result = await generateText({
+  model: openai("gpt-4"),
+  tools,
+  messages: [{ role: "user", content: "Plan a Tokyo trip in July" }]
+});
+```
+
+---
+
+## 10 Real-World Examples of Planning in Agents
+
+### 1. **Travel Booking Agent**
+
+Goal: Book a full itinerary
+
+Steps:
+1. Search flights
+2. Compare prices
+3. Check hotel reviews
+4. Book lodging
+5. Confirm via email
+
+### 2. **Legal Research Assistant**
+
+Goal: Summarize precedent for a case
+
+Steps:
+1. Interpret the legal query
+2. Search multiple databases
+3. Summarize relevant case law
+4. Draft memo with citations
+
+### 3. **Email Cleanup Bot**
+
+Goal: Reach inbox zero
+
+Steps:
+1. Categorize emails
+2. Archive bulk newsletters
+3. Flag important contacts
+4. Generate replies for 3 urgent emails
+
+### 4. **E-commerce UX Test Generator**
+
+Goal: Generate test cases for checkout
+
+Steps:
+1. List flow states
+2. Identify edge cases
+3. Generate Playwright scripts
+4. Export and upload to CI
+
+### 5. **Personal Finance Optimizer**
+
+Goal: Reduce monthly spend
+
+Steps:
+1. Parse transactions
+2. Identify high-cost categories
+3. Suggest subscriptions to cancel
+4. Forecast savings
+
+### 6. **Recipe Generator Agent**
+
+Goal: Create a meal plan
+
+Steps:
+1. Parse dietary constraints
+2. Suggest 3 recipes per day
+3. Generate grocery list
+4. Format printable PDF
+
+### 7. **Fitness Coach Bot**
+
+Goal: Create a 6-week plan
+
+Steps:
+1. Analyze goals (strength vs cardio)
+2. Schedule weekly workouts
+3. Build progressive intensity
+4. Set weekly feedback checkpoints
+
+### 8. **DevOps Incident Manager**
+
+Goal: Respond to downtime
+
+Steps:
+1. Detect alert
+2. Fetch logs and traces
+3. Identify root cause
+4. Suggest rollback or redeploy
+5. Notify on-call team
+
+### 9. **Customer Support Summarizer**
+
+Goal: Handle a support thread
+
+Steps:
+1. Read ticket history
+2. Identify main issue
+3. Propose resolution
+4. Write summary note for CRM
+
+### 10. **Custom Report Generator**
+
+Goal: Create monthly business report
+
+Steps:
+1. Fetch KPIs from APIs
+2. Format into markdown
+3. Highlight trends
+4. Generate summary email
+
+---
+
+## Planning with Vercel AI SDK
+
+Use `createTool()` to build callable functions, then let `generateText()` orchestrate them.
+
+```ts
+const summarize = createTool({ ... });
+const analyze = createTool({ ... });
+
+await generateText({
+  model: openai("gpt-4"),
+  tools: [summarize, analyze],
+  messages: [{ role: "user", content: "Create a Q2 performance review" }]
+});
+```
+
+You can even return structured plans:
+
+```json
+{
+  "steps": [
+    { "action": "fetchMetrics" },
+    { "action": "summarizeFindings" },
+    { "action": "emailReport" }
+  ]
+}
+```
+
+---
+
+## Challenges of Planning
+
+- Requires long-term memory
+- Can be brittle if assumptions change
+- May need retries and corrections
+- Needs logs, observability, and retry control
+
+You can improve robustness via:
+- External memory stores
+- Planning + execution separation
+- Agent traces and feedback loops
+
+---
+
+## Conclusion: From Language to Logic
+
+Planning transforms language models into **autonomous systems**.
+
+It’s what lets them:
+- Understand goals
+- Break them down
+- Choose tools
+- Retry and recover
+
+From Copilot to trip planners, the future of AI isn't just conversational — it’s **cognitive, structured, and goal-aware**.
+
+With planning, we don’t just ask models to respond.
+
+We ask them to **think**.
+
